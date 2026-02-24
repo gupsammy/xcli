@@ -64,6 +64,7 @@ export type CliContext = {
     },
   ) => void;
   extractTweetId: (tweetIdOrUrl: string) => string;
+  emitError: (code: string, message: string, hint?: string) => void;
 };
 
 const COOKIE_SOURCES: CookieSource[] = ['safari', 'chrome', 'firefox'];
@@ -162,8 +163,8 @@ function readConfigFile(path: string, warn: (message: string) => void): Partial<
 }
 
 function loadConfig(warn: (message: string) => void): BirdConfig {
-  const globalPath = join(homedir(), '.config', 'bird', 'config.json5');
-  const localPath = join(process.cwd(), '.birdrc.json5');
+  const globalPath = join(homedir(), '.config', 'xcli', 'config.json5');
+  const localPath = join(process.cwd(), '.xclirc.json5');
 
   return {
     ...readConfigFile(globalPath, warn),
@@ -181,8 +182,12 @@ type CredentialsOptions = {
   cookieTimeout?: string | number;
 };
 
-export function createCliContext(normalizedArgs: string[], env: NodeJS.ProcessEnv = process.env): CliContext {
-  const isTty = process.stdout.isTTY;
+export function createCliContext(
+  normalizedArgs: string[],
+  env: NodeJS.ProcessEnv = process.env,
+  isTtyOverride?: boolean,
+): CliContext {
+  const isTty = isTtyOverride ?? Boolean(process.stdout.isTTY);
   let output: OutputConfig = resolveOutputConfigFromArgv(normalizedArgs, env, isTty);
   kleur.enabled = output.color;
 
@@ -261,21 +266,21 @@ export function createCliContext(normalizedArgs: string[], env: NodeJS.ProcessEn
   });
 
   function applyOutputFromCommand(command: Command): void {
-    const opts = command.optsWithGlobals() as { plain?: boolean; emoji?: boolean; color?: boolean };
+    const opts = command.optsWithGlobals() as { plain?: boolean; emoji?: boolean; color?: boolean; human?: boolean };
     output = resolveOutputConfigFromCommander(opts, env, isTty);
     kleur.enabled = output.color;
   }
 
   function resolveTimeoutFromOptions(options: { timeout?: string | number }): number | undefined {
-    return resolveTimeoutMs(options.timeout, config.timeoutMs, env.BIRD_TIMEOUT_MS);
+    return resolveTimeoutMs(options.timeout, config.timeoutMs, env.XCLI_TIMEOUT_MS);
   }
 
   function resolveCookieTimeoutFromOptions(options: { cookieTimeout?: string | number }): number | undefined {
-    return resolveTimeoutMs(options.cookieTimeout, config.cookieTimeoutMs, env.BIRD_COOKIE_TIMEOUT_MS);
+    return resolveTimeoutMs(options.cookieTimeout, config.cookieTimeoutMs, env.XCLI_COOKIE_TIMEOUT_MS);
   }
 
   function resolveQuoteDepthFromOptions(options: { quoteDepth?: string | number }): number | undefined {
-    return resolveQuoteDepth(options.quoteDepth, config.quoteDepth, env.BIRD_QUOTE_DEPTH);
+    return resolveQuoteDepth(options.quoteDepth, config.quoteDepth, env.XCLI_QUOTE_DEPTH);
   }
 
   function resolveCredentialsFromOptions(opts: CredentialsOptions): ReturnType<typeof resolveCredentials> {
@@ -321,12 +326,39 @@ export function createCliContext(normalizedArgs: string[], env: NodeJS.ProcessEn
     return specs;
   }
 
+  function isJsonMode(explicitJson?: boolean): boolean {
+    if (explicitJson) {
+      return true;
+    }
+    return !isTty && !output.humanMode;
+  }
+
+  function emitError(code: string, message: string, hint?: string): void {
+    if (isTty) {
+      console.error(`${p('err')}${message}`);
+      if (hint) {
+        console.error(`${p('hint')}  ${hint}`);
+      }
+    } else {
+      process.stderr.write(`${JSON.stringify({ error: code, message, hint: hint ?? null })}\n`);
+    }
+  }
+
   function printTweets(
     tweets: TweetData[],
     opts: { json?: boolean; emptyMessage?: string; showSeparator?: boolean } = {},
   ) {
-    if (opts.json) {
-      console.log(JSON.stringify(tweets, null, 2));
+    const useJson = isJsonMode(opts.json);
+    if (useJson) {
+      if (isTty) {
+        // Interactive --json: pretty print
+        console.log(JSON.stringify(tweets, null, 2));
+      } else {
+        // Non-TTY: NDJSON (one object per line, no indentation)
+        for (const tweet of tweets) {
+          process.stdout.write(`${JSON.stringify(tweet)}\n`);
+        }
+      }
       return;
     }
     if (tweets.length === 0) {
@@ -409,11 +441,17 @@ export function createCliContext(normalizedArgs: string[], env: NodeJS.ProcessEn
     opts: { json: boolean; usePagination: boolean; emptyMessage: string },
   ) {
     const tweets = result.tweets ?? [];
-    if (opts.json && opts.usePagination) {
-      console.log(JSON.stringify({ tweets, nextCursor: result.nextCursor ?? null }, null, 2));
+    const useJson = isJsonMode(opts.json);
+    if (useJson && opts.usePagination) {
+      const envelope = { tweets, nextCursor: result.nextCursor ?? null };
+      if (isTty) {
+        console.log(JSON.stringify(envelope, null, 2));
+      } else {
+        process.stdout.write(`${JSON.stringify(envelope)}\n`);
+      }
       return;
     }
-    printTweets(tweets, { json: opts.json, emptyMessage: opts.emptyMessage });
+    printTweets(tweets, { json: useJson, emptyMessage: opts.emptyMessage });
   }
 
   return {
@@ -431,5 +469,6 @@ export function createCliContext(normalizedArgs: string[], env: NodeJS.ProcessEn
     printTweets,
     printTweetsResult,
     extractTweetId,
+    emitError,
   };
 }

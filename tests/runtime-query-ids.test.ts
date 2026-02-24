@@ -8,7 +8,7 @@ import { createRuntimeQueryIdStore } from '../src/lib/runtime-query-ids.js';
 describe('runtime-query-ids', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete process.env.BIRD_QUERY_IDS_CACHE;
+    delete process.env.XCLI_QUERY_IDS_CACHE;
   });
 
   it('refreshes IDs by scanning discovered bundles and persists cache', async () => {
@@ -66,7 +66,7 @@ describe('runtime-query-ids', () => {
     const cacheDir = path.join(os.tmpdir(), `bird-test-${randomUUID()}`);
     await mkdir(cacheDir, { recursive: true });
     const cachePath = path.join(cacheDir, 'query-ids-cache.json');
-    process.env.BIRD_QUERY_IDS_CACHE = cachePath;
+    process.env.XCLI_QUERY_IDS_CACHE = cachePath;
 
     const snapshot = {
       fetchedAt: new Date().toISOString(),

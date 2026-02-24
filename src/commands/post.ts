@@ -29,7 +29,8 @@ export function registerPostCommands(program: Command, ctx: CliContext): void {
     .command('tweet')
     .description('Post a new tweet')
     .argument('<text>', 'Tweet text')
-    .action(async (text: string) => {
+    .option('--json', 'Output result as JSON (auto-enabled when piped)')
+    .action(async (text: string, cmdOpts: { json?: boolean }) => {
       const opts = program.opts();
       const timeoutMs = ctx.resolveTimeoutFromOptions(opts);
       const quoteDepth = ctx.resolveQuoteDepthFromOptions(opts);
@@ -48,11 +49,11 @@ export function registerPostCommands(program: Command, ctx: CliContext): void {
       }
 
       if (!cookies.authToken || !cookies.ct0) {
-        console.error(`${ctx.p('err')}Missing required credentials`);
+        ctx.emitError('missing_credentials', 'Missing required credentials', 'bird check');
         process.exit(1);
       }
 
-      if (cookies.source) {
+      if (ctx.isTty && cookies.source) {
         console.error(`${ctx.l('source')}${cookies.source}`);
       }
 
@@ -61,10 +62,16 @@ export function registerPostCommands(program: Command, ctx: CliContext): void {
       const result = await client.tweet(text, mediaIds);
 
       if (result.success) {
-        console.log(`${ctx.p('ok')}Tweet posted successfully!`);
-        console.log(formatTweetUrlLine(result.tweetId, ctx.getOutput()));
+        const data = { id: result.tweetId, url: `https://x.com/i/status/${result.tweetId}` };
+        const useJson = cmdOpts.json || !ctx.isTty;
+        if (useJson) {
+          console.log(JSON.stringify(data));
+        } else {
+          console.log(`${ctx.p('ok')}Tweet posted successfully!`);
+          console.log(formatTweetUrlLine(result.tweetId, ctx.getOutput()));
+        }
       } else {
-        console.error(`${ctx.p('err')}Failed to post tweet: ${result.error}`);
+        ctx.emitError('fetch_failed', `Failed to post tweet: ${result.error}`);
         process.exit(1);
       }
     });
@@ -74,7 +81,8 @@ export function registerPostCommands(program: Command, ctx: CliContext): void {
     .description('Reply to an existing tweet')
     .argument('<tweet-id-or-url>', 'Tweet ID or URL to reply to')
     .argument('<text>', 'Reply text')
-    .action(async (tweetIdOrUrl: string, text: string) => {
+    .option('--json', 'Output result as JSON (auto-enabled when piped)')
+    .action(async (tweetIdOrUrl: string, text: string, cmdOpts: { json?: boolean }) => {
       const opts = program.opts();
       const timeoutMs = ctx.resolveTimeoutFromOptions(opts);
       const quoteDepth = ctx.resolveQuoteDepthFromOptions(opts);
@@ -94,25 +102,33 @@ export function registerPostCommands(program: Command, ctx: CliContext): void {
       }
 
       if (!cookies.authToken || !cookies.ct0) {
-        console.error(`${ctx.p('err')}Missing required credentials`);
+        ctx.emitError('missing_credentials', 'Missing required credentials', 'bird check');
         process.exit(1);
       }
 
-      if (cookies.source) {
+      if (ctx.isTty && cookies.source) {
         console.error(`${ctx.l('source')}${cookies.source}`);
       }
 
-      console.error(`${ctx.p('info')}Replying to tweet: ${tweetId}`);
+      if (ctx.isTty) {
+        console.error(`${ctx.p('info')}Replying to tweet: ${tweetId}`);
+      }
 
       const client = new TwitterClient({ cookies, timeoutMs, quoteDepth });
       const mediaIds = await uploadMediaOrExit(client, media, ctx);
       const result = await client.reply(text, tweetId, mediaIds);
 
       if (result.success) {
-        console.log(`${ctx.p('ok')}Reply posted successfully!`);
-        console.log(formatTweetUrlLine(result.tweetId, ctx.getOutput()));
+        const data = { id: result.tweetId, url: `https://x.com/i/status/${result.tweetId}` };
+        const useJson = cmdOpts.json || !ctx.isTty;
+        if (useJson) {
+          console.log(JSON.stringify(data));
+        } else {
+          console.log(`${ctx.p('ok')}Reply posted successfully!`);
+          console.log(formatTweetUrlLine(result.tweetId, ctx.getOutput()));
+        }
       } else {
-        console.error(`${ctx.p('err')}Failed to post reply: ${result.error}`);
+        ctx.emitError('fetch_failed', `Failed to post reply: ${result.error}`);
         process.exit(1);
       }
     });

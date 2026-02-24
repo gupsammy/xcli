@@ -3,6 +3,7 @@ export type OutputConfig = {
   emoji: boolean;
   color: boolean;
   hyperlinks: boolean;
+  humanMode: boolean;
 };
 
 export type StatusKind = 'ok' | 'warn' | 'err' | 'info' | 'hint';
@@ -35,8 +36,9 @@ export function resolveOutputConfigFromArgv(argv: string[], env: NodeJS.ProcessE
   const emoji = !plain && !argv.includes('--no-emoji');
   const color = !plain && !argv.includes('--no-color') && defaultColor;
   const hyperlinks = !plain && isTty;
+  const humanMode = argv.includes('--human');
 
-  return { plain, emoji, color, hyperlinks };
+  return { plain, emoji, color, hyperlinks, humanMode };
 }
 
 export function resolveOutputConfigFromCommander(
@@ -51,8 +53,9 @@ export function resolveOutputConfigFromCommander(
   const emoji = !plain && (opts.emoji ?? true);
   const color = !plain && (opts.color ?? true) && defaultColor;
   const hyperlinks = !plain && isTty;
+  const humanMode = Boolean((opts as { human?: boolean }).human ?? false);
 
-  return { plain, emoji, color, hyperlinks };
+  return { plain, emoji, color, hyperlinks, humanMode };
 }
 
 export function statusPrefix(kind: StatusKind, cfg: OutputConfig): string {

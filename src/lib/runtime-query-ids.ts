@@ -87,11 +87,11 @@ async function fetchText(fetchImpl: typeof fetch, url: string): Promise<string> 
 }
 
 function resolveDefaultCachePath(): string {
-  const override = process.env.BIRD_QUERY_IDS_CACHE;
+  const override = process.env.XCLI_QUERY_IDS_CACHE;
   if (override && override.trim().length > 0) {
     return path.resolve(override.trim());
   }
-  return path.join(homedir(), '.config', 'bird', DEFAULT_CACHE_FILENAME);
+  return path.join(homedir(), '.config', 'xcli', DEFAULT_CACHE_FILENAME);
 }
 
 function parseSnapshot(raw: unknown): RuntimeQueryIdSnapshot | null {

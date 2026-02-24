@@ -101,17 +101,21 @@ export function registerUserTweetsCommand(program: Command, ctx: CliContext): vo
         const client = new TwitterClient({ cookies, timeoutMs, quoteDepth });
 
         // Look up user ID from username
-        console.error(`${ctx.p('info')}Looking up @${username}...`);
+        if (ctx.isTty) {
+          console.error(`${ctx.p('info')}Looking up @${username}...`);
+        }
         const userLookup = await client.getUserIdByUsername(username);
         if (!userLookup.success || !userLookup.userId) {
-          console.error(`${ctx.p('err')}${userLookup.error || `Could not find user @${username}`}`);
+          ctx.emitError('fetch_failed', userLookup.error || `Could not find user @${username}`);
           process.exit(1);
         }
 
         const displayName = userLookup.name
           ? `${userLookup.name} (@${userLookup.username})`
           : `@${userLookup.username}`;
-        console.error(`${ctx.p('info')}Fetching tweets from ${displayName}...`);
+        if (ctx.isTty) {
+          console.error(`${ctx.p('info')}Fetching tweets from ${displayName}...`);
+        }
 
         const includeRaw = cmdOpts.jsonFull ?? false;
         const wantsPaginationOutput = Boolean(cmdOpts.cursor) || maxPages !== undefined || count > pageSize;
@@ -130,8 +134,8 @@ export function registerUserTweetsCommand(program: Command, ctx: CliContext): vo
             emptyMessage: `No tweets found for @${username}.`,
           });
 
-          // Show pagination hint if there's more
-          if (result.nextCursor && !cmdOpts.json && !cmdOpts.jsonFull) {
+          // Show pagination hint if there's more (TTY only)
+          if (result.nextCursor && ctx.isTty && !cmdOpts.json && !cmdOpts.jsonFull) {
             console.error(`${ctx.p('info')}More tweets available. Use --cursor "${result.nextCursor}" to continue.`);
           }
         } else {

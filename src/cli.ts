@@ -31,5 +31,5 @@ if (showHelp) {
 if (argv) {
   program.parse(argv);
 } else {
-  program.parse(['node', 'bird', ...normalizedArgs]);
+  program.parse(['node', 'xcli', ...normalizedArgs]);
 }

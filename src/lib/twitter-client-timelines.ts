@@ -36,7 +36,7 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
     }
 
     private logBookmarksDebug(message: string, data?: Record<string, unknown>): void {
-      if (process.env.BIRD_DEBUG_BOOKMARKS !== '1') {
+      if (process.env.XCLI_DEBUG_BOOKMARKS !== '1') {
         return;
       }
       if (data) {

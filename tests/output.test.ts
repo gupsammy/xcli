@@ -14,7 +14,7 @@ import type { TweetData } from '../src/lib/twitter-client-types.js';
 describe('output', () => {
   it('defaults to emoji + color + hyperlinks on TTY', () => {
     const cfg = resolveOutputConfigFromArgv([], {}, true);
-    expect(cfg).toEqual({ plain: false, emoji: true, color: true, hyperlinks: true });
+    expect(cfg).toEqual({ plain: false, emoji: true, color: true, hyperlinks: true, humanMode: false });
   });
 
   it('disables hyperlinks on non-TTY', () => {
@@ -24,7 +24,7 @@ describe('output', () => {
 
   it('plain disables emoji + color + hyperlinks', () => {
     const cfg = resolveOutputConfigFromArgv(['--plain'], {}, true);
-    expect(cfg).toEqual({ plain: true, emoji: false, color: false, hyperlinks: false });
+    expect(cfg).toEqual({ plain: true, emoji: false, color: false, hyperlinks: false, humanMode: false });
     expect(statusPrefix('ok', cfg)).toBe('[ok] ');
     expect(labelPrefix('url', cfg)).toBe('url: ');
   });
@@ -41,7 +41,7 @@ describe('output', () => {
 
   it('--no-color disables colors', () => {
     const cfg = resolveOutputConfigFromArgv(['--no-color'], {}, true);
-    expect(cfg).toEqual({ plain: false, emoji: true, color: false, hyperlinks: true });
+    expect(cfg).toEqual({ plain: false, emoji: true, color: false, hyperlinks: true, humanMode: false });
   });
 
   it('--no-emoji switches to text prefixes', () => {
@@ -52,14 +52,14 @@ describe('output', () => {
 
   it('commander opts override defaults', () => {
     const cfg = resolveOutputConfigFromCommander({ emoji: false, color: false }, {}, true);
-    expect(cfg).toEqual({ plain: false, emoji: false, color: false, hyperlinks: true });
+    expect(cfg).toEqual({ plain: false, emoji: false, color: false, hyperlinks: true, humanMode: false });
     expect(statusPrefix('info', cfg)).toBe('Info: ');
     expect(labelPrefix('date', cfg)).toBe('Date: ');
   });
 
   it('commander plain wins over emoji/color', () => {
     const cfg = resolveOutputConfigFromCommander({ plain: true, emoji: true, color: true }, {}, true);
-    expect(cfg).toEqual({ plain: true, emoji: false, color: false, hyperlinks: false });
+    expect(cfg).toEqual({ plain: true, emoji: false, color: false, hyperlinks: false, humanMode: false });
   });
 
   it('commander disables hyperlinks on non-TTY', () => {
@@ -70,52 +70,58 @@ describe('output', () => {
   it('formats stats line for all modes', () => {
     const stats = { likeCount: null, retweetCount: undefined, replyCount: 2 };
 
-    expect(formatStatsLine(stats, { plain: true, emoji: false, color: false, hyperlinks: false })).toBe(
-      'likes: 0  retweets: 0  replies: 2',
-    );
-    expect(formatStatsLine(stats, { plain: false, emoji: false, color: false, hyperlinks: false })).toBe(
-      'Likes 0  Retweets 0  Replies 2',
-    );
-    expect(formatStatsLine(stats, { plain: false, emoji: true, color: false, hyperlinks: false })).toBe(
-      '❤️ 0  🔁 0  💬 2',
-    );
+    expect(
+      formatStatsLine(stats, { plain: true, emoji: false, color: false, hyperlinks: false, humanMode: false }),
+    ).toBe('likes: 0  retweets: 0  replies: 2');
+    expect(
+      formatStatsLine(stats, { plain: false, emoji: false, color: false, hyperlinks: false, humanMode: false }),
+    ).toBe('Likes 0  Retweets 0  Replies 2');
+    expect(
+      formatStatsLine(stats, { plain: false, emoji: true, color: false, hyperlinks: false, humanMode: false }),
+    ).toBe('❤️ 0  🔁 0  💬 2');
   });
 
   it('always includes tweet URL in all modes', () => {
     const id = '1234567890';
     const url = `https://x.com/i/status/${id}`;
 
-    expect(formatTweetUrlLine(id, { plain: true, emoji: false, color: false, hyperlinks: false })).toContain(url);
-    expect(formatTweetUrlLine(id, { plain: false, emoji: false, color: false, hyperlinks: false })).toContain(url);
-    expect(formatTweetUrlLine(id, { plain: false, emoji: true, color: false, hyperlinks: true })).toContain(url);
+    expect(
+      formatTweetUrlLine(id, { plain: true, emoji: false, color: false, hyperlinks: false, humanMode: false }),
+    ).toContain(url);
+    expect(
+      formatTweetUrlLine(id, { plain: false, emoji: false, color: false, hyperlinks: false, humanMode: false }),
+    ).toContain(url);
+    expect(
+      formatTweetUrlLine(id, { plain: false, emoji: true, color: false, hyperlinks: true, humanMode: false }),
+    ).toContain(url);
   });
 
   it('hyperlink returns plain text when hyperlinks disabled', () => {
-    const cfg = { plain: true, emoji: false, color: false, hyperlinks: false };
+    const cfg = { plain: true, emoji: false, color: false, hyperlinks: false, humanMode: false };
     expect(hyperlink('https://x.com/test', undefined, cfg)).toBe('https://x.com/test');
   });
 
   it('hyperlink returns plain text on non-TTY (hyperlinks: false)', () => {
-    const cfg = { plain: false, emoji: true, color: false, hyperlinks: false };
+    const cfg = { plain: false, emoji: true, color: false, hyperlinks: false, humanMode: false };
     expect(hyperlink('https://x.com/test', undefined, cfg)).toBe('https://x.com/test');
   });
 
   it('hyperlink wraps URL with OSC 8 escapes when hyperlinks enabled', () => {
-    const cfg = { plain: false, emoji: true, color: true, hyperlinks: true };
+    const cfg = { plain: false, emoji: true, color: true, hyperlinks: true, humanMode: false };
     const result = hyperlink('https://x.com/test', undefined, cfg);
     expect(result).toContain('\x1b]8;;');
     expect(result).toContain('\x07');
   });
 
   it('hyperlink uses custom display text', () => {
-    const cfg = { plain: false, emoji: true, color: true, hyperlinks: true };
+    const cfg = { plain: false, emoji: true, color: true, hyperlinks: true, humanMode: false };
     const result = hyperlink('https://x.com/test', 'Click here', cfg);
     expect(result).toContain('Click here');
     expect(result).toContain('\x1b]8;;https://x.com/test\x07');
   });
 
   it('hyperlink strips OSC control characters from url and text', () => {
-    const cfg = { plain: false, emoji: true, color: true, hyperlinks: true };
+    const cfg = { plain: false, emoji: true, color: true, hyperlinks: true, humanMode: false };
     const result = hyperlink('https://x.com/\u001btest\u0007', 'Hi\u001b\u0007', cfg);
     expect(result).not.toContain('\u001btest\u0007');
     expect(result).not.toContain('Hi\u001b\u0007');

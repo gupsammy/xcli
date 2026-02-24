@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -38,13 +38,9 @@ describe('cli shared', () => {
 
   it('uses chromeProfileDir from config when provided', async () => {
     const tempHome = mkdtempSync(join(tmpdir(), 'bird-home-'));
-    const configDir = join(tempHome, '.config', 'bird');
+    const configDir = join(tempHome, '.config', 'xcli');
     mkdirSync(configDir, { recursive: true });
-    writeFileSync(
-      join(configDir, 'config.json5'),
-      '{ chromeProfileDir: "/tmp/Brave/Profile 1" }',
-      'utf8',
-    );
+    writeFileSync(join(configDir, 'config.json5'), '{ chromeProfileDir: "/tmp/Brave/Profile 1" }', 'utf8');
     process.env.HOME = tempHome;
 
     try {

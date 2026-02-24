@@ -7,7 +7,8 @@ export function registerUnbookmarkCommand(program: Command, ctx: CliContext): vo
     .command('unbookmark')
     .description('Remove bookmarked tweets')
     .argument('<tweet-id-or-url...>', 'Tweet IDs or URLs to remove from bookmarks')
-    .action(async (tweetIdOrUrls: string[]) => {
+    .option('--json', 'Output result as JSON (auto-enabled when piped)')
+    .action(async (tweetIdOrUrls: string[], cmdOpts: { json?: boolean }) => {
       const opts = program.opts();
       const timeoutMs = ctx.resolveTimeoutFromOptions(opts);
 
@@ -18,21 +19,26 @@ export function registerUnbookmarkCommand(program: Command, ctx: CliContext): vo
       }
 
       if (!cookies.authToken || !cookies.ct0) {
-        console.error(`${ctx.p('err')}Missing required credentials`);
+        ctx.emitError('missing_credentials', 'Missing required credentials', 'bird check');
         process.exit(1);
       }
 
       const client = new TwitterClient({ cookies, timeoutMs });
       let failures = 0;
+      const useJson = cmdOpts.json || !ctx.isTty;
 
       for (const input of tweetIdOrUrls) {
         const tweetId = ctx.extractTweetId(input);
         const result = await client.unbookmark(tweetId);
         if (result.success) {
-          console.log(`${ctx.p('ok')}Removed bookmark for ${tweetId}`);
+          if (useJson) {
+            process.stdout.write(`${JSON.stringify({ removed: tweetId })}\n`);
+          } else {
+            console.log(`${ctx.p('ok')}Removed bookmark for ${tweetId}`);
+          }
         } else {
           failures += 1;
-          console.error(`${ctx.p('err')}Failed to remove bookmark for ${tweetId}: ${result.error}`);
+          ctx.emitError('fetch_failed', `Failed to remove bookmark for ${tweetId}: ${result.error}`);
         }
       }
 

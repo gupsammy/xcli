@@ -39,7 +39,8 @@ export function registerFollowCommands(program: Command, ctx: CliContext): void 
     .command('follow')
     .description('Follow a user')
     .argument('<username-or-id>', 'Username (with or without @) or user ID to follow')
-    .action(async (usernameOrId: string) => {
+    .option('--json', 'Output result as JSON (auto-enabled when piped)')
+    .action(async (usernameOrId: string, cmdOpts: { json?: boolean }) => {
       const opts = program.opts();
       const timeoutMs = ctx.resolveTimeoutFromOptions(opts);
 
@@ -50,7 +51,7 @@ export function registerFollowCommands(program: Command, ctx: CliContext): void 
       }
 
       if (!cookies.authToken || !cookies.ct0) {
-        console.error(`${ctx.p('err')}Missing required credentials`);
+        ctx.emitError('missing_credentials', 'Missing required credentials', 'bird check');
         process.exit(1);
       }
 
@@ -67,9 +68,14 @@ export function registerFollowCommands(program: Command, ctx: CliContext): void 
       const result = await client.follow(userId);
       if (result.success) {
         const finalName = result.username ? `@${result.username}` : displayName;
-        console.log(`${ctx.p('ok')}Now following ${finalName}`);
+        const useJson = cmdOpts.json || !ctx.isTty;
+        if (useJson) {
+          console.log(JSON.stringify({ action: 'follow', username: result.username ?? username ?? userId }));
+        } else {
+          console.log(`${ctx.p('ok')}Now following ${finalName}`);
+        }
       } else {
-        console.error(`${ctx.p('err')}Failed to follow ${displayName}: ${result.error}`);
+        ctx.emitError('fetch_failed', `Failed to follow ${displayName}: ${result.error}`);
         process.exit(1);
       }
     });
@@ -78,7 +84,8 @@ export function registerFollowCommands(program: Command, ctx: CliContext): void 
     .command('unfollow')
     .description('Unfollow a user')
     .argument('<username-or-id>', 'Username (with or without @) or user ID to unfollow')
-    .action(async (usernameOrId: string) => {
+    .option('--json', 'Output result as JSON (auto-enabled when piped)')
+    .action(async (usernameOrId: string, cmdOpts: { json?: boolean }) => {
       const opts = program.opts();
       const timeoutMs = ctx.resolveTimeoutFromOptions(opts);
 
@@ -89,7 +96,7 @@ export function registerFollowCommands(program: Command, ctx: CliContext): void 
       }
 
       if (!cookies.authToken || !cookies.ct0) {
-        console.error(`${ctx.p('err')}Missing required credentials`);
+        ctx.emitError('missing_credentials', 'Missing required credentials', 'bird check');
         process.exit(1);
       }
 
@@ -106,9 +113,14 @@ export function registerFollowCommands(program: Command, ctx: CliContext): void 
       const result = await client.unfollow(userId);
       if (result.success) {
         const finalName = result.username ? `@${result.username}` : displayName;
-        console.log(`${ctx.p('ok')}Unfollowed ${finalName}`);
+        const useJson = cmdOpts.json || !ctx.isTty;
+        if (useJson) {
+          console.log(JSON.stringify({ action: 'unfollow', username: result.username ?? username ?? userId }));
+        } else {
+          console.log(`${ctx.p('ok')}Unfollowed ${finalName}`);
+        }
       } else {
-        console.error(`${ctx.p('err')}Failed to unfollow ${displayName}: ${result.error}`);
+        ctx.emitError('fetch_failed', `Failed to unfollow ${displayName}: ${result.error}`);
         process.exit(1);
       }
     });

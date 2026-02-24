@@ -299,7 +299,8 @@ export function registerUserCommands(program: Command, ctx: CliContext): void {
   program
     .command('whoami')
     .description('Show which Twitter account the current credentials belong to')
-    .action(async () => {
+    .option('--json', 'Output as JSON (auto-enabled when piped)')
+    .action(async (cmdOpts: { json?: boolean }) => {
       const opts = program.opts();
       const timeoutMs = ctx.resolveTimeoutFromOptions(opts);
       const quoteDepth = ctx.resolveQuoteDepthFromOptions(opts);
@@ -311,11 +312,11 @@ export function registerUserCommands(program: Command, ctx: CliContext): void {
       }
 
       if (!cookies.authToken || !cookies.ct0) {
-        console.error(`${ctx.p('err')}Missing required credentials`);
+        ctx.emitError('missing_credentials', 'Missing required credentials', 'bird check');
         process.exit(1);
       }
 
-      if (cookies.source) {
+      if (ctx.isTty && cookies.source) {
         console.error(`${ctx.l('source')}${cookies.source}`);
       }
 
@@ -325,12 +326,24 @@ export function registerUserCommands(program: Command, ctx: CliContext): void {
       const credentialSource = cookies.source ?? 'env/auto-detected cookies';
 
       if (result.success && result.user) {
-        console.log(`${ctx.l('user')}@${result.user.username} (${result.user.name})`);
-        console.log(`${ctx.l('userId')}${result.user.id}`);
-        console.log(`${ctx.l('engine')}graphql`);
-        console.log(`${ctx.l('credentials')}${credentialSource}`);
+        const useJson = cmdOpts.json || !ctx.isTty;
+        if (useJson) {
+          console.log(
+            JSON.stringify({
+              username: result.user.username,
+              id: result.user.id,
+              name: result.user.name,
+              credentialSource,
+            }),
+          );
+        } else {
+          console.log(`${ctx.l('user')}@${result.user.username} (${result.user.name})`);
+          console.log(`${ctx.l('userId')}${result.user.id}`);
+          console.log(`${ctx.l('engine')}graphql`);
+          console.log(`${ctx.l('credentials')}${credentialSource}`);
+        }
       } else {
-        console.error(`${ctx.p('err')}Failed to determine current user: ${result.error ?? 'Unknown error'}`);
+        ctx.emitError('fetch_failed', `Failed to determine current user: ${result.error ?? 'Unknown error'}`);
         process.exit(1);
       }
     });

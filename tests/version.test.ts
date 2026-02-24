@@ -22,8 +22,8 @@ function withTempDir<T>(fn: (dir: string) => T): T {
 
 describe('getCliVersion', () => {
   afterEach(() => {
-    delete process.env.BIRD_VERSION;
-    delete process.env.BIRD_GIT_SHA;
+    delete process.env.XCLI_VERSION;
+    delete process.env.XCLI_GIT_SHA;
   });
 
   it('reads package.json version when available', () => {
@@ -33,8 +33,8 @@ describe('getCliVersion', () => {
   });
 
   it('formats injected version + sha', () => {
-    process.env.BIRD_VERSION = '9.9.9';
-    process.env.BIRD_GIT_SHA = 'abcdef123456';
+    process.env.XCLI_VERSION = '9.9.9';
+    process.env.XCLI_GIT_SHA = 'abcdef123456';
     expect(formatVersionLine('not a url')).toBe('9.9.9 (abcdef12)');
   });
 

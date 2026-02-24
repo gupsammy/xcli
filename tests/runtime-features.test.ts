@@ -8,14 +8,14 @@ import { buildLikesFeatures, buildListsFeatures, buildSearchFeatures } from '../
 
 describe('runtime-features', () => {
   afterEach(() => {
-    delete process.env.BIRD_FEATURES_JSON;
-    delete process.env.BIRD_FEATURES_CACHE;
-    delete process.env.BIRD_FEATURES_PATH;
+    delete process.env.XCLI_FEATURES_JSON;
+    delete process.env.XCLI_FEATURES_CACHE;
+    delete process.env.XCLI_FEATURES_PATH;
     clearFeatureOverridesCache();
   });
 
   it('applies global and set overrides from env json', () => {
-    process.env.BIRD_FEATURES_JSON = JSON.stringify({
+    process.env.XCLI_FEATURES_JSON = JSON.stringify({
       global: {
         global_flag: true,
         ignored: 'nope',
@@ -72,7 +72,7 @@ describe('runtime-features', () => {
       ),
     );
 
-    process.env.BIRD_FEATURES_PATH = cachePath;
+    process.env.XCLI_FEATURES_PATH = cachePath;
     await refreshFeatureOverridesCache();
 
     const raw = await readFile(cachePath, 'utf8');
@@ -109,7 +109,7 @@ describe('runtime-features', () => {
       ),
     );
 
-    process.env.BIRD_FEATURES_PATH = cachePath;
+    process.env.XCLI_FEATURES_PATH = cachePath;
     clearFeatureOverridesCache();
 
     const search = buildSearchFeatures();
