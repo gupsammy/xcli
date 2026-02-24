@@ -1,278 +1,215 @@
-# bird 🐦 — fast X CLI for tweeting, replying, and reading
+# xcli — fast X/Twitter CLI
 
-`bird` is a fast X CLI for tweeting, replying, and reading via X/Twitter GraphQL (cookie auth).
+`xcli` is a fast command-line interface for X/Twitter, forked and extended from [bird](https://github.com/steipete/bird) by [@steipete](https://github.com/steipete) (now private). It lets you post, read, bookmark, follow, search, and more — straight from your terminal using cookie auth extracted from your browser. No API key required.
 
-## Disclaimer
-
-This project uses X/Twitter’s **undocumented** web GraphQL API (and cookie auth). X can change endpoints, query IDs,
-and anti-bot behavior at any time — **expect this to break without notice**.
+> **Note:** xcli uses X's internal, undocumented GraphQL API. It may break without notice. Use responsibly.
 
 ## Install
 
-```bash
-npm install -g @steipete/bird
-# or
-pnpm add -g @steipete/bird
-# or
-bun add -g @steipete/bird
-
-# one-shot (no install)
-bunx @steipete/bird whoami
-```
-
-Homebrew (macOS, prebuilt Bun binary):
+### Prebuilt binary (macOS)
 
 ```bash
-brew install steipete/tap/bird
+curl -fsSL https://github.com/gupsammy/x-cli/releases/latest/download/xcli -o xcli
+chmod +x xcli
+sudo mv xcli /usr/local/bin/xcli
 ```
+
+Verify the installation:
+
+```bash
+xcli --version
+```
+
+### Build from source
+
+Requires [Bun](https://bun.sh) and [pnpm](https://pnpm.io).
+
+```bash
+git clone https://github.com/gupsammy/x-cli
+cd x-cli
+pnpm install
+pnpm run build:binary
+```
+
+The compiled binary will be at `./xcli`. Move it to a directory on your `$PATH`.
 
 ## Quickstart
 
 ```bash
-# Show the logged-in account
-bird whoami
+# Show the logged-in account (verifies auth is working)
+xcli whoami
 
-# Discover command help
-bird help whoami
+# Post a tweet
+xcli tweet "hello from xcli"
 
-# Read a tweet (URL or ID)
-bird read https://x.com/user/status/1234567890123456789
-bird 1234567890123456789 --json
+# Read a tweet by URL or ID
+xcli read https://x.com/user/status/1234567890123456789
+xcli 1234567890123456789 --json
 
-# Thread + replies
-bird thread https://x.com/user/status/1234567890123456789
-bird replies 1234567890123456789
-bird replies 1234567890123456789 --max-pages 3 --json
-bird thread 1234567890123456789 --max-pages 3 --json
-
-# Search + mentions
-bird search "from:steipete" -n 5
-bird mentions -n 5
-bird mentions --user @steipete -n 5
-
-# User tweets (profile timeline)
-bird user-tweets @steipete -n 20
-bird user-tweets @steipete -n 50 --json
-
-# Bookmarks
-bird bookmarks -n 5
-bird bookmarks --folder-id 123456789123456789 -n 5 # https://x.com/i/bookmarks/<folder-id>
-bird bookmarks --all --json
-bird bookmarks --all --max-pages 2 --json
-bird bookmarks --include-parent --json
-bird unbookmark 1234567890123456789
-bird unbookmark https://x.com/user/status/1234567890123456789
-
-# Likes
-bird likes -n 5
-
-# News and trending topics (AI-curated from Explore tabs)
-bird news --ai-only -n 10
-bird news --sports -n 5
-
-# Lists
-bird list-timeline 1234567890 -n 20
-bird list-timeline https://x.com/i/lists/1234567890 --all --json
-bird list-timeline 1234567890 --max-pages 3 --json
-
-# Following (who you follow)
-bird following -n 20
-bird following --user 12345678 -n 10  # by user ID
-
-# Followers (who follows you)
-bird followers -n 20
-bird followers --user 12345678 -n 10  # by user ID
-
-# Refresh GraphQL query IDs cache (no rebuild)
-bird query-ids --fresh
+# Fetch your home timeline
+xcli home -n 20
 ```
-
-## News & Trending
-
-Fetch AI-curated news and trending topics from X's Explore page tabs:
-
-```bash
-# Fetch 10 news items from all tabs (default: For You, News, Sports, Entertainment)
-bird news -n 10
-
-# Fetch only AI-curated news (filters out regular trends)
-bird news --ai-only -n 20
-
-# Fetch from specific tabs
-bird news --news-only --ai-only -n 10
-bird news --sports -n 15
-bird news --entertainment --ai-only -n 5
-
-# Include related tweets for each news item
-bird news --with-tweets --tweets-per-item 3 -n 10
-
-# Combine multiple tab filters
-bird news --sports --entertainment -n 20
-
-# JSON output
-bird news --json -n 5
-bird news --json-full --ai-only -n 10  # includes raw API response
-```
-
-Tab options (can be combined):
-- `--for-you` — Fetch from For You tab only
-- `--news-only` — Fetch from News tab only
-- `--sports` — Fetch from Sports tab only
-- `--entertainment` — Fetch from Entertainment tab only
-- `--trending-only` — Fetch from Trending tab only
-
-By default, the command fetches from For You, News, Sports, and Entertainment tabs (Trending excluded to reduce noise). Headlines are automatically deduplicated across tabs.
-
-## Library
-
-`bird` can be used as a library (same GraphQL client as the CLI):
-
-```ts
-import { TwitterClient, resolveCredentials } from '@steipete/bird';
-
-const { cookies } = await resolveCredentials({ cookieSource: 'safari' });
-const client = new TwitterClient({ cookies });
-
-// Search for tweets
-const searchResult = await client.search('from:steipete', 50);
-
-// Fetch news and trending topics from all tabs (default: For You, News, Sports, Entertainment)
-const newsResult = await client.getNews(10, { aiOnly: true });
-
-// Fetch from specific tabs with related tweets
-const sportsNews = await client.getNews(10, {
-  aiOnly: true,
-  withTweets: true,
-  tabs: ['sports', 'entertainment']
-});
-```
-
-Account details (About profile):
-
-```ts
-const aboutResult = await client.getUserAboutAccount('steipete');
-if (aboutResult.success && aboutResult.aboutProfile) {
-  console.log(aboutResult.aboutProfile.accountBasedIn);
-}
-```
-
-Fields:
-- `accountBasedIn`
-- `source`
-- `createdCountryAccurate`
-- `locationAccurate`
-- `learnMoreUrl`
 
 ## Commands
 
-- `bird tweet "<text>"` — post a new tweet.
-- `bird reply <tweet-id-or-url> "<text>"` — reply to a tweet using its ID or URL.
-- `bird help [command]` — show help (or help for a subcommand).
-- `bird query-ids [--fresh] [--json]` — inspect or refresh cached GraphQL query IDs.
-- `bird home [-n count] [--following] [--json] [--json-full]` — fetch your home timeline (For You) or Following feed.
-- `bird read <tweet-id-or-url> [--json]` — fetch tweet content as text or JSON.
-- `bird <tweet-id-or-url> [--json]` — shorthand for `read` when only a URL or ID is provided.
-- `bird replies <tweet-id-or-url> [--all] [--max-pages n] [--cursor string] [--delay ms] [--json]` — list replies to a tweet.
-- `bird thread <tweet-id-or-url> [--all] [--max-pages n] [--cursor string] [--delay ms] [--json]` — show the full conversation thread.
-- `bird search "<query>" [-n count] [--all] [--max-pages n] [--cursor string] [--json]` — search for tweets matching a query; `--max-pages` requires `--all` or `--cursor`.
-- `bird mentions [-n count] [--user @handle] [--json]` — find tweets mentioning a user (defaults to the authenticated user).
-- `bird user-tweets <@handle> [-n count] [--cursor string] [--max-pages n] [--delay ms] [--json]` — get tweets from a user's profile timeline.
-- `bird bookmarks [-n count] [--folder-id id] [--all] [--max-pages n] [--cursor string] [--expand-root-only] [--author-chain] [--author-only] [--full-chain-only] [--include-ancestor-branches] [--include-parent] [--thread-meta] [--sort-chronological] [--json]` — list your bookmarked tweets (or a specific bookmark folder); expansion flags control thread context; `--max-pages` requires `--all` or `--cursor`.
-- `bird unbookmark <tweet-id-or-url...>` — remove one or more bookmarks by tweet ID or URL.
-- `bird likes [-n count] [--all] [--max-pages n] [--cursor string] [--json] [--json-full]` — list your liked tweets; `--max-pages` requires `--all` or `--cursor`.
-- `bird news [-n count] [--ai-only] [--with-tweets] [--tweets-per-item n] [--for-you] [--news-only] [--sports] [--entertainment] [--trending-only] [--json]` — fetch news and trending topics from X's Explore tabs.
-- `bird trending` — alias for `news` command.
-- `bird lists [--member-of] [-n count] [--json]` — list your lists (owned or memberships).
-- `bird list-timeline <list-id-or-url> [-n count] [--all] [--max-pages n] [--cursor string] [--json]` — get tweets from a list timeline; `--max-pages` implies `--all`.
-- `bird following [--user <userId>] [-n count] [--cursor string] [--all] [--max-pages n] [--json]` — list users that you (or another user) follow; `--max-pages` requires `--all`.
-- `bird followers [--user <userId>] [-n count] [--cursor string] [--all] [--max-pages n] [--json]` — list users that follow you (or another user); `--max-pages` requires `--all`.
-- `bird about <@handle> [--json]` — get account origin and location information for a user.
-- `bird whoami` — print which Twitter account your cookies belong to.
-- `bird check` — show which credentials are available and where they were sourced from.
+| Command | Description |
+|---------|-------------|
+| `xcli tweet "<text>"` | Post a new tweet |
+| `xcli reply <tweet-id-or-url> "<text>"` | Reply to a tweet |
+| `xcli read <tweet-id-or-url>` | Fetch tweet content as text |
+| `xcli <tweet-id-or-url>` | Shorthand for `xcli read` |
+| `xcli replies <tweet-id-or-url>` | List replies to a tweet |
+| `xcli thread <tweet-id-or-url>` | Show the full conversation thread |
+| `xcli home` | Fetch your home timeline (For You or Following) |
+| `xcli search "<query>"` | Search for tweets matching a query |
+| `xcli mentions` | Find tweets mentioning you (or another user via `--user`) |
+| `xcli user-tweets <@handle>` | Get tweets from a user's profile timeline |
+| `xcli bookmarks` | List your bookmarked tweets |
+| `xcli unbookmark <tweet-id-or-url...>` | Remove one or more bookmarks |
+| `xcli likes` | List your liked tweets |
+| `xcli news` | Fetch news and trending topics from X's Explore tabs |
+| `xcli trending` | Alias for `news` |
+| `xcli lists` | List your Twitter Lists (owned or memberships) |
+| `xcli list-timeline <list-id-or-url>` | Get tweets from a list timeline |
+| `xcli following` | List users you follow |
+| `xcli followers` | List users who follow you |
+| `xcli follow <username-or-id>` | Follow a user |
+| `xcli unfollow <username-or-id>` | Unfollow a user |
+| `xcli about <@handle>` | Get account origin and location metadata for a user |
+| `xcli whoami` | Print which X account your cookies belong to |
+| `xcli check` | Show which credentials are available and where they came from |
+| `xcli query-ids` | Inspect or refresh the cached GraphQL query IDs |
+| `xcli help [command]` | Show help (or help for a specific subcommand) |
 
-Bookmarks flags:
-- `--expand-root-only`: expand threads only when the bookmark is a root tweet.
-- `--author-chain`: keep only the bookmarked author's connected self-reply chain.
-- `--author-only`: include all tweets from the bookmarked author within the thread.
-- `--full-chain-only`: keep the entire reply chain connected to the bookmarked tweet (all authors).
-- `--include-ancestor-branches`: include sibling branches for ancestors when using `--full-chain-only`.
-- `--include-parent`: include the direct parent tweet for non-root bookmarks.
-- `--thread-meta`: add thread metadata fields to each tweet.
-- `--sort-chronological`: sort output globally oldest to newest (default preserves bookmark order).
+### Pagination flags
 
-Global options:
-- `--auth-token <token>`: set the `auth_token` cookie manually.
-- `--ct0 <token>`: set the `ct0` cookie manually.
-- `--cookie-source <safari|chrome|firefox>`: choose browser cookie source (repeatable; order matters).
-- `--chrome-profile <name>`: Chrome profile name for cookie extraction (e.g., `Default`, `Profile 2`).
-- `--chrome-profile-dir <path>`: Chrome/Chromium profile directory or cookie DB path for cookie extraction.
-- `--firefox-profile <name>`: Firefox profile for cookie extraction.
-- `--cookie-timeout <ms>`: cookie extraction timeout for keychain/OS helpers (milliseconds).
-- `--timeout <ms>`: abort requests after the given timeout (milliseconds).
-- `--quote-depth <n>`: max quoted tweet depth in JSON output (default: 1; 0 disables).
-- `--plain`: stable output (no emoji, no color).
-- `--no-emoji`: disable emoji output.
-- `--no-color`: disable ANSI colors (or set `NO_COLOR=1`).
-- `--media <path>`: attach media file (repeatable, up to 4 images or 1 video).
-- `--alt <text>`: alt text for the corresponding `--media` (repeatable).
+Most list commands support `--all`, `--max-pages <n>`, `--cursor <string>`, and `--delay <ms>` for paginating through results. `--max-pages` requires `--all` or `--cursor`.
 
-## Authentication (GraphQL)
+### Bookmarks flags
 
-GraphQL mode uses your existing X/Twitter web session (no password prompt). It sends requests to internal
-X endpoints and authenticates via cookies (`auth_token`, `ct0`).
+The `bookmarks` command has additional flags for controlling thread context in the output:
 
-Write operations:
-- `tweet`/`reply` primarily use GraphQL (`CreateTweet`).
-- If GraphQL returns error `226` (“automated request”), `bird` falls back to the legacy `statuses/update.json` endpoint.
+- `--expand-root-only` — expand threads only when the bookmark is a root tweet
+- `--author-chain` — keep only the bookmarked author's connected self-reply chain
+- `--author-only` — include all tweets from the bookmarked author within the thread
+- `--full-chain-only` — keep the entire reply chain connected to the bookmarked tweet
+- `--include-ancestor-branches` — include sibling branches for ancestors (with `--full-chain-only`)
+- `--include-parent` — include the direct parent tweet for non-root bookmarks
+- `--thread-meta` — add thread metadata fields to each tweet
+- `--sort-chronological` — sort output oldest to newest (default preserves bookmark order)
 
-`bird` resolves credentials in this order:
+### News flags
 
-1. CLI flags: `--auth-token`, `--ct0`
-2. Environment variables: `AUTH_TOKEN`, `CT0` (fallback: `TWITTER_AUTH_TOKEN`, `TWITTER_CT0`)
-3. Browser cookies via `@steipete/sweet-cookie` (override via `--cookie-source` order)
+Tab filters for `xcli news` (combinable):
 
-Browser cookie sources:
-- Safari: `~/Library/Cookies/Cookies.binarycookies` (fallback: `~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies`)
-- Chrome: `~/Library/Application Support/Google/Chrome/<Profile>/Cookies`
-- Firefox: `~/Library/Application Support/Firefox/Profiles/<profile>/cookies.sqlite`
-  - For Chromium variants (Arc/Brave/etc), pass a profile directory or cookie DB via `--chrome-profile-dir`.
+- `--for-you` — For You tab
+- `--news-only` — News tab
+- `--sports` — Sports tab
+- `--entertainment` — Entertainment tab
+- `--trending-only` — Trending tab
+- `--ai-only` — Filter to AI-curated headlines only
+- `--with-tweets` — Include related tweets per news item
 
-## Config (JSON5)
+### Global options
 
-Config precedence: CLI flags > env vars > project config > global config.
+| Flag | Description |
+|------|-------------|
+| `--auth-token <token>` | Set the `auth_token` cookie manually |
+| `--ct0 <token>` | Set the `ct0` cookie manually |
+| `--cookie-source <browser>` | Browser to extract cookies from: `safari`, `chrome`, `firefox` (repeatable) |
+| `--chrome-profile <name>` | Chrome profile name (e.g. `Default`, `Profile 2`) |
+| `--chrome-profile-dir <path>` | Chrome/Chromium profile directory or cookie DB path (for Arc, Brave, etc.) |
+| `--firefox-profile <name>` | Firefox profile name for cookie extraction |
+| `--cookie-timeout <ms>` | Timeout for cookie extraction via keychain/OS helpers |
+| `--timeout <ms>` | Abort HTTP requests after this many milliseconds |
+| `--quote-depth <n>` | Max quoted tweet depth in JSON output (default: 1; 0 disables) |
+| `--plain` | Stable output: no emoji, no color |
+| `--no-emoji` | Disable emoji output |
+| `--no-color` | Disable ANSI colors |
+| `--human` | Force human-readable output even when stdout is piped |
+| `--media <path>` | Attach a media file (repeatable, up to 4 images or 1 video) |
+| `--alt <text>` | Alt text for the corresponding `--media` (repeatable) |
+| `--json` | Output machine-readable JSON |
 
-- Global: `~/.config/bird/config.json5`
-- Project: `./.birdrc.json5`
+## Configuration
 
-Example `~/.config/bird/config.json5`:
+Config is read in this priority order: CLI flags > env vars > project config > global config.
+
+- Global: `~/.config/xcli/config.json5`
+- Project: `.xclirc.json5` (in current working directory)
+
+Example `~/.config/xcli/config.json5`:
 
 ```json5
 {
   // Cookie source order for browser extraction (string or array)
   cookieSource: ["firefox", "safari"],
+
+  // For Chromium variants (Arc, Brave, etc.)
   chromeProfileDir: "/path/to/Chromium/Profile",
+
+  // Firefox profile name
   firefoxProfile: "default-release",
+
+  // Timeouts in milliseconds
   cookieTimeoutMs: 30000,
   timeoutMs: 20000,
+
+  // Depth limit for quoted tweet expansion in JSON output
   quoteDepth: 1
 }
 ```
 
-Environment shortcuts:
-- `BIRD_TIMEOUT_MS`
-- `BIRD_COOKIE_TIMEOUT_MS`
-- `BIRD_QUOTE_DEPTH`
+### Environment variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `XCLI_TIMEOUT_MS` | HTTP request timeout in milliseconds | `30000` |
+| `XCLI_COOKIE_TIMEOUT_MS` | Cookie extraction timeout in milliseconds | `30000` |
+| `XCLI_QUOTE_DEPTH` | Max quoted tweet depth in JSON output | `1` |
+| `NO_COLOR` | Set to `1` to disable ANSI colors | — |
+
+## Authentication
+
+`xcli` uses your existing X/Twitter web session — no API key or password prompt required. It reads the `auth_token` and `ct0` cookies directly from your browser.
+
+Credentials are resolved in this order:
+
+1. CLI flags: `--auth-token` and `--ct0`
+2. Environment variables: `AUTH_TOKEN` and `CT0` (fallbacks: `TWITTER_AUTH_TOKEN`, `TWITTER_CT0`)
+3. Browser cookies, extracted automatically from the sources configured via `--cookie-source` or `cookieSource` in config
+
+Browser cookie locations:
+
+- Safari: `~/Library/Cookies/Cookies.binarycookies`
+- Chrome: `~/Library/Application Support/Google/Chrome/<Profile>/Cookies`
+- Firefox: `~/Library/Application Support/Firefox/Profiles/<profile>/cookies.sqlite`
+
+For Chromium variants (Arc, Brave, etc.), use `--chrome-profile-dir` to point at a profile directory or cookie DB file directly.
+
+To verify what credentials xcli found and where they came from:
+
+```bash
+xcli check
+```
+
+To use a specific browser or profile:
+
+```bash
+xcli --cookie-source firefox whoami
+xcli --cookie-source safari --cookie-source chrome whoami
+xcli --chrome-profile-dir "/Users/you/Library/Application Support/Arc/User Data/Default" whoami
+```
 
 ## Output
 
-- `--json` prints raw tweet objects for read/replies/thread/search/mentions/user-tweets/bookmarks/likes.
-- When using `--json` with pagination (`--all`, `--cursor`, `--max-pages`, or for `user-tweets` when `-n > 20`), output is `{ tweets, nextCursor }`.
-- `read` returns full text for Notes and Articles when present.
-- Use `--plain` for stable, script-friendly output (no emoji, no color).
+Add `--json` to most commands for machine-readable JSON output. When using `--json` with pagination (`--all`, `--cursor`, `--max-pages`), output is `{ tweets, nextCursor }`.
 
-### JSON Schema
+Add `--json-full` to include the raw API response in a `_raw` field (tweet commands only).
 
-When using `--json`, tweet objects include:
+Use `--plain` for stable, script-friendly output with no emoji and no ANSI color codes.
+
+### Tweet JSON schema
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -288,7 +225,7 @@ When using `--json`, tweet objects include:
 | `inReplyToStatusId` | string? | Parent tweet ID (present if this is a reply) |
 | `quotedTweet` | object? | Embedded quote tweet (same schema; depth controlled by `--quote-depth`) |
 
-When using `--json` with `following`/`followers`, user objects include:
+### User JSON schema (following/followers)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -299,87 +236,77 @@ When using `--json` with `following`/`followers`, user objects include:
 | `followersCount` | number? | Followers count |
 | `followingCount` | number? | Following count |
 | `isBlueVerified` | boolean? | Blue verified flag |
- | `profileImageUrl` | string? | Profile image URL |
- | `createdAt` | string? | Account creation timestamp |
+| `profileImageUrl` | string? | Profile image URL |
+| `createdAt` | string? | Account creation timestamp |
 
-When using `--json` with `news`/`trending`, news objects include:
+### News JSON schema
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Unique identifier for the news item |
 | `headline` | string | News headline or trend title |
-| `category` | string? | Category (e.g., "AI · Technology", "Trending", "News") |
+| `category` | string? | Category (e.g., "AI · Technology", "Trending") |
 | `timeAgo` | string? | Relative time (e.g., "2h ago") |
 | `postCount` | number? | Number of posts |
 | `description` | string? | Item description |
 | `url` | string? | URL to the trend or news article |
-| `tweets` | array? | Related tweets (only when `--with-tweets` is used) |
-| `_raw` | object? | Raw API response (only when `--json-full` is used) |
-
-
-## Query IDs (GraphQL)
-
-X rotates GraphQL “query IDs” frequently. Each GraphQL operation is addressed as:
-
-- `operationName` (e.g. `TweetDetail`, `CreateTweet`)
-- `queryId` (rotating ID baked into X’s web client bundles)
-
-`bird` ships with a baseline mapping in `src/lib/query-ids.json` (copied into `dist/` on build). At runtime,
-it can refresh that mapping by scraping X’s public web client bundles and caching the result on disk.
-
-Runtime cache:
-- Default path: `~/.config/bird/query-ids-cache.json`
-- Override path: `BIRD_QUERY_IDS_CACHE=/path/to/file.json`
-- TTL: 24h (stale cache is still used, but marked “not fresh”)
-
-Auto-recovery:
-- On GraphQL `404` (query ID invalid), `bird` forces a refresh once and retries.
-- For `TweetDetail`/`SearchTimeline`, `bird` also rotates through a small set of known fallback IDs to reduce
-  breakage while refreshing.
-
-Refresh on demand:
-
-```bash
-bird query-ids --fresh
-```
-
-Exit codes:
-- `0`: success
-- `1`: runtime error (network/auth/etc)
-- `2`: invalid usage/validation (e.g. bad `--user` handle)
-
-## Version
-
-`bird --version` prints `package.json` version plus current git sha when available, e.g. `0.3.0 (3df7969b)`.
+| `tweets` | array? | Related tweets (only with `--with-tweets`) |
 
 ## Media uploads
 
-- Attach media with `--media` (repeatable) and optional `--alt` per item.
-- Up to 4 images/GIFs, or 1 video (no mixing). Supported: jpg, jpeg, png, webp, gif, mp4, mov.
-- Images/GIFs + 1 video supported (uploads via Twitter legacy upload endpoint + cookies; video may take longer to process).
-
-Example:
+Attach media to tweets and replies with `--media` (repeatable) and optional `--alt` per item. Up to 4 images/GIFs, or 1 video. Supported formats: jpg, jpeg, png, webp, gif, mp4, mov.
 
 ```bash
-bird tweet "hi" --media img.png --alt "desc"
+xcli tweet "check this out" --media screenshot.png --alt "A screenshot showing the results"
+xcli tweet "two images" --media a.png --alt "first" --media b.png --alt "second"
 ```
+
+## Query IDs
+
+X rotates GraphQL "query IDs" frequently. `xcli` ships with a baseline mapping and caches a refreshed copy on disk.
+
+- Default cache path: `~/.config/xcli/query-ids-cache.json`
+- Override path: `XCLI_QUERY_IDS_CACHE=/path/to/file.json`
+- Cache TTL: 24 hours
+
+On a GraphQL 404 (stale query ID), `xcli` automatically refreshes the cache and retries. You can also refresh manually:
+
+```bash
+xcli query-ids --fresh
+```
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Runtime error (network, auth, etc.) |
+| `2` | Invalid usage or validation error (e.g., bad `--user` handle) |
 
 ## Development
 
 ```bash
-cd ~/Projects/bird
+git clone https://github.com/gupsammy/x-cli
+cd x-cli
 pnpm install
-pnpm run build       # dist/ + bun binary
-pnpm run build:dist  # dist/ only
-pnpm run build:binary
-
-pnpm run dev tweet "Test"
-pnpm run dev -- --plain check
-pnpm test
-pnpm run lint
+pnpm run build:dist   # TypeScript compilation only (outputs to dist/)
+pnpm test             # Run the test suite
+pnpm run build:binary # Compile standalone xcli binary (requires Bun)
 ```
 
-## Notes
+To run commands during development without building the binary:
 
-- GraphQL uses internal X endpoints and can be rate limited (429).
-- Query IDs rotate; refresh at runtime with `bird query-ids --fresh` (or update the baked baseline via `pnpm run graphql:update`).
+```bash
+pnpm run dev tweet "Test tweet"
+pnpm run dev -- --plain check
+```
+
+Contributions are welcome. Open issues and pull requests at [github.com/gupsammy/x-cli](https://github.com/gupsammy/x-cli).
+
+## Credits
+
+`xcli` is a fork of [bird](https://github.com/steipete/bird) by [@steipete](https://github.com/steipete) (now private). Many features were contributed by the bird community — see [CHANGELOG](./CHANGELOG.md) for details.
+
+## License
+
+MIT — see [LICENSE](./LICENSE)
