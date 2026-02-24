@@ -9,7 +9,7 @@
 ### Prebuilt binary (macOS)
 
 ```bash
-curl -fsSL https://github.com/gupsammy/x-cli/releases/latest/download/xcli -o xcli
+curl -fsSL https://github.com/gupsammy/xcli/releases/latest/download/xcli -o xcli
 chmod +x xcli
 sudo mv xcli /usr/local/bin/xcli
 ```
@@ -25,8 +25,8 @@ xcli --version
 Requires [Bun](https://bun.sh) and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/gupsammy/x-cli
-cd x-cli
+git clone https://github.com/gupsammy/xcli
+cd xcli
 pnpm install
 pnpm run build:binary
 ```
@@ -286,8 +286,8 @@ xcli query-ids --fresh
 ## Development
 
 ```bash
-git clone https://github.com/gupsammy/x-cli
-cd x-cli
+git clone https://github.com/gupsammy/xcli
+cd xcli
 pnpm install
 pnpm run build:dist   # TypeScript compilation only (outputs to dist/)
 pnpm test             # Run the test suite
@@ -301,7 +301,7 @@ pnpm run dev tweet "Test tweet"
 pnpm run dev -- --plain check
 ```
 
-Contributions are welcome. Open issues and pull requests at [github.com/gupsammy/x-cli](https://github.com/gupsammy/x-cli).
+Contributions are welcome. Open issues and pull requests at [github.com/gupsammy/xcli](https://github.com/gupsammy/xcli).
 
 ## Credits
 
