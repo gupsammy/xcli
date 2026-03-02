@@ -5,19 +5,22 @@ import { registerReadCommands } from '../src/commands/read.js';
 import { TwitterClient } from '../src/lib/twitter-client.js';
 
 describe('replies command', () => {
-  const createMockContext = () =>
-    ({
+  const createMockContext = () => {
+    const mockCreds = async () => ({
+      cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
+      warnings: [],
+    });
+    return {
       resolveTimeoutFromOptions: () => undefined,
       resolveQuoteDepthFromOptions: () => 1,
       extractTweetId: (input: string) => input,
-      resolveCredentialsFromOptions: async () => ({
-        cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
-        warnings: [],
-      }),
+      resolveCredentialsFromOptions: mockCreds,
+      resolvePublicCredentialsFromOptions: mockCreds,
       p: () => '',
       printTweets: () => undefined,
       printTweetsResult: () => undefined,
-    }) as unknown as CliContext;
+    } as unknown as CliContext;
+  };
 
   it('uses pagination when --max-pages is provided', async () => {
     const program = new Command();
@@ -80,19 +83,22 @@ describe('replies command', () => {
 });
 
 describe('thread command', () => {
-  const createMockContext = () =>
-    ({
+  const createMockContext = () => {
+    const mockCreds = async () => ({
+      cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
+      warnings: [],
+    });
+    return {
       resolveTimeoutFromOptions: () => undefined,
       resolveQuoteDepthFromOptions: () => 1,
       extractTweetId: (input: string) => input,
-      resolveCredentialsFromOptions: async () => ({
-        cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
-        warnings: [],
-      }),
+      resolveCredentialsFromOptions: mockCreds,
+      resolvePublicCredentialsFromOptions: mockCreds,
       p: () => '',
       printTweets: () => undefined,
       printTweetsResult: () => undefined,
-    }) as unknown as CliContext;
+    } as unknown as CliContext;
+  };
 
   it('uses pagination when --max-pages is provided', async () => {
     const program = new Command();

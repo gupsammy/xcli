@@ -108,7 +108,8 @@ export function createProgram(ctx: CliContext): Command {
       `\n\n${ctx.colors.section('Config')}\n${ctx.colors.muted(
         `  Reads ${ctx.colors.argument('~/.config/xcli/config.json5')} and ${ctx.colors.argument('./.xclirc.json5')} (JSON5)`,
       )}\n${ctx.colors.muted(
-        `  Supports: chromeProfile, chromeProfileDir, firefoxProfile, cookieSource, cookieTimeoutMs, timeoutMs, quoteDepth`,
+        `  Supports: chromeProfile, chromeProfileDir, firefoxProfile, cookieSource, cookieTimeoutMs, timeoutMs, quoteDepth, ` +
+          `secondaryChromeProfile, secondaryChromeProfileDir, secondaryFirefoxProfile, secondaryCookieSource, secondaryAuthToken, secondaryCt0`,
       )}\n\n${ctx.colors.section('Env')}\n${ctx.colors.muted(
         `  ${ctx.colors.option('NO_COLOR')}, ${ctx.colors.option('XCLI_TIMEOUT_MS')}, ${ctx.colors.option('XCLI_COOKIE_TIMEOUT_MS')}, ${ctx.colors.option('XCLI_QUOTE_DEPTH')}`,
       )}`,

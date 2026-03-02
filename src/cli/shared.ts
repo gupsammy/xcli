@@ -17,6 +17,8 @@ import {
 import type { TweetData } from '../lib/twitter-client.js';
 
 export type BirdConfig = {
+  authToken?: string;
+  ct0?: string;
   chromeProfile?: string;
   chromeProfileDir?: string;
   firefoxProfile?: string;
@@ -24,6 +26,13 @@ export type BirdConfig = {
   cookieTimeoutMs?: number;
   timeoutMs?: number;
   quoteDepth?: number;
+  // Secondary/burner account for public read-only commands
+  secondaryChromeProfile?: string;
+  secondaryChromeProfileDir?: string;
+  secondaryFirefoxProfile?: string;
+  secondaryCookieSource?: CookieSource | CookieSource[];
+  secondaryAuthToken?: string;
+  secondaryCt0?: string;
 };
 
 export type MediaSpec = { path: string; alt?: string; mime: string; buffer: Buffer };
@@ -50,6 +59,7 @@ export type CliContext = {
   resolveTimeoutFromOptions: (options: { timeout?: string | number }) => number | undefined;
   resolveQuoteDepthFromOptions: (options: { quoteDepth?: string | number }) => number | undefined;
   resolveCredentialsFromOptions: (opts: CredentialsOptions) => ReturnType<typeof resolveCredentials>;
+  resolvePublicCredentialsFromOptions: (opts: CredentialsOptions) => ReturnType<typeof resolveCredentials>;
   loadMedia: (opts: { media: string[]; alts: string[] }) => MediaSpec[];
   printTweets: (tweets: TweetData[], opts?: { json?: boolean; emptyMessage?: string; showSeparator?: boolean }) => void;
   printTweetsResult: (
@@ -290,11 +300,47 @@ export function createCliContext(
     const chromeProfile =
       opts.chromeProfileDir || opts.chromeProfile || config.chromeProfileDir || config.chromeProfile;
     return resolveCredentials({
-      authToken: opts.authToken,
-      ct0: opts.ct0,
+      authToken: opts.authToken || config.authToken,
+      ct0: opts.ct0 || config.ct0,
       cookieSource,
       chromeProfile,
       firefoxProfile: opts.firefoxProfile || config.firefoxProfile,
+      cookieTimeoutMs: resolveCookieTimeoutFromOptions(opts),
+    });
+  }
+
+  function resolvePublicCredentialsFromOptions(opts: CredentialsOptions): ReturnType<typeof resolveCredentials> {
+    // Explicit CLI flags always win — user asked for a specific account
+    if (
+      opts.authToken ||
+      opts.ct0 ||
+      opts.chromeProfile ||
+      opts.chromeProfileDir ||
+      opts.firefoxProfile ||
+      opts.cookieSource?.length
+    ) {
+      return resolveCredentialsFromOptions(opts);
+    }
+
+    // Check if a secondary config is present
+    const hasSecondary =
+      config.secondaryAuthToken ||
+      config.secondaryChromeProfile ||
+      config.secondaryChromeProfileDir ||
+      config.secondaryFirefoxProfile;
+
+    if (!hasSecondary) {
+      // No secondary configured — fall back to primary transparently
+      return resolveCredentialsFromOptions(opts);
+    }
+
+    // Resolve via secondary profile
+    return resolveCredentials({
+      authToken: config.secondaryAuthToken,
+      ct0: config.secondaryCt0,
+      cookieSource: resolveCookieSourceOrder(config.secondaryCookieSource) ?? COOKIE_SOURCES,
+      chromeProfile: config.secondaryChromeProfileDir || config.secondaryChromeProfile,
+      firefoxProfile: config.secondaryFirefoxProfile,
       cookieTimeoutMs: resolveCookieTimeoutFromOptions(opts),
     });
   }
@@ -465,6 +511,7 @@ export function createCliContext(
     resolveTimeoutFromOptions,
     resolveQuoteDepthFromOptions,
     resolveCredentialsFromOptions,
+    resolvePublicCredentialsFromOptions,
     loadMedia,
     printTweets,
     printTweetsResult,

@@ -39,7 +39,7 @@ export function registerSearchCommands(program: Command, ctx: CliContext): void 
         }
         const maxPages = pagination.maxPages;
 
-        const { cookies, warnings } = await ctx.resolveCredentialsFromOptions(opts);
+        const { cookies, warnings } = await ctx.resolvePublicCredentialsFromOptions(opts);
 
         for (const warning of warnings) {
           console.error(`${ctx.p('warn')}${warning}`);

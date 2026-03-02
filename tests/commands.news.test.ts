@@ -10,17 +10,15 @@ describe('news command', () => {
 
   beforeEach(() => {
     program = new Command();
+    const mockCreds = async () => ({
+      cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
+      warnings: [],
+    });
     mockContext = {
       resolveTimeoutFromOptions: () => 30000,
       resolveQuoteDepthFromOptions: () => undefined,
-      resolveCredentialsFromOptions: async () => ({
-        cookies: {
-          authToken: 'auth',
-          ct0: 'ct0',
-          cookieHeader: 'auth=auth; ct0=ct0',
-        },
-        warnings: [],
-      }),
+      resolveCredentialsFromOptions: mockCreds,
+      resolvePublicCredentialsFromOptions: mockCreds,
       p: (type: string) => `[${type}] `,
       colors: {
         accent: (text: string) => text,
@@ -129,14 +127,12 @@ describe('news command', () => {
   });
 
   it('requires both authToken and ct0 credentials', async () => {
-    mockContext.resolveCredentialsFromOptions = async () => ({
-      cookies: {
-        authToken: '',
-        ct0: '',
-        cookieHeader: '',
-      },
+    const emptyCreds = async () => ({
+      cookies: { authToken: '', ct0: '', cookieHeader: '' },
       warnings: [],
     });
+    mockContext.resolveCredentialsFromOptions = emptyCreds;
+    mockContext.resolvePublicCredentialsFromOptions = emptyCreds;
 
     registerNewsCommand(program, mockContext as CliContext);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {

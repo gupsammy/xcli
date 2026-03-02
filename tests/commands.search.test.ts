@@ -10,13 +10,15 @@ describe('search command', () => {
 
   beforeEach(() => {
     program = new Command();
+    const mockCreds = async () => ({
+      cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
+      warnings: [],
+    });
     mockContext = {
       resolveTimeoutFromOptions: () => undefined,
       resolveQuoteDepthFromOptions: () => undefined,
-      resolveCredentialsFromOptions: async () => ({
-        cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
-        warnings: [],
-      }),
+      resolveCredentialsFromOptions: mockCreds,
+      resolvePublicCredentialsFromOptions: mockCreds,
       p: () => '',
       printTweetsResult: vi.fn(),
     };

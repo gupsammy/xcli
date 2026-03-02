@@ -18,7 +18,7 @@ export function registerReadCommands(program: Command, ctx: CliContext): void {
 
       const tweetId = ctx.extractTweetId(tweetIdOrUrl);
 
-      const { cookies, warnings } = await ctx.resolveCredentialsFromOptions(opts);
+      const { cookies, warnings } = await ctx.resolvePublicCredentialsFromOptions(opts);
 
       for (const warning of warnings) {
         console.error(`${ctx.p('warn')}${warning}`);
@@ -79,7 +79,7 @@ export function registerReadCommands(program: Command, ctx: CliContext): void {
           process.exit(1);
         }
 
-        const { cookies, warnings } = await ctx.resolveCredentialsFromOptions(opts);
+        const { cookies, warnings } = await ctx.resolvePublicCredentialsFromOptions(opts);
 
         for (const warning of warnings) {
           console.error(`${ctx.p('warn')}${warning}`);
@@ -156,7 +156,7 @@ export function registerReadCommands(program: Command, ctx: CliContext): void {
           process.exit(1);
         }
 
-        const { cookies, warnings } = await ctx.resolveCredentialsFromOptions(opts);
+        const { cookies, warnings } = await ctx.resolvePublicCredentialsFromOptions(opts);
 
         for (const warning of warnings) {
           console.error(`${ctx.p('warn')}${warning}`);

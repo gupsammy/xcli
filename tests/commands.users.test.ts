@@ -4,12 +4,15 @@ import type { CliContext } from '../src/cli/shared.js';
 import { registerUserCommands } from '../src/commands/users.js';
 import { TwitterClient } from '../src/lib/twitter-client.js';
 
+const mockCreds = async () => ({
+  cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
+  warnings: [],
+});
+
 const baseCtx = {
   resolveTimeoutFromOptions: () => undefined,
-  resolveCredentialsFromOptions: async () => ({
-    cookies: { authToken: 'auth', ct0: 'ct0', cookieHeader: 'auth=auth; ct0=ct0' },
-    warnings: [],
-  }),
+  resolveCredentialsFromOptions: mockCreds,
+  resolvePublicCredentialsFromOptions: mockCreds,
   p: () => '',
   printTweets: () => undefined,
 } as unknown as CliContext;

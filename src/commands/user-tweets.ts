@@ -87,7 +87,7 @@ export function registerUserTweetsCommand(program: Command, ctx: CliContext): vo
           process.exit(2);
         }
 
-        const { cookies, warnings } = await ctx.resolveCredentialsFromOptions(opts);
+        const { cookies, warnings } = await ctx.resolvePublicCredentialsFromOptions(opts);
 
         for (const warning of warnings) {
           console.error(`${ctx.p('warn')}${warning}`);

@@ -102,7 +102,7 @@ export function registerNewsCommand(program: Command, ctx: CliContext): void {
         const count = Number.parseInt(cmdOpts.count || '10', 10);
         const tweetsPerItem = Number.parseInt(cmdOpts.tweetsPerItem || '5', 10);
 
-        const { cookies, warnings } = await ctx.resolveCredentialsFromOptions(opts);
+        const { cookies, warnings } = await ctx.resolvePublicCredentialsFromOptions(opts);
 
         for (const warning of warnings) {
           console.error(`${ctx.p('warn')}${warning}`);
