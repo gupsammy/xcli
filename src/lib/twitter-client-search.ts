@@ -10,6 +10,14 @@ const RAW_QUERY_MISSING_REGEX = /must be defined/i;
 export interface SearchFetchOptions {
   /** Include raw GraphQL response in `_raw` field */
   includeRaw?: boolean;
+  /**
+   * Sort order for results.
+   * - `recent` (default): chronological, newest first (API product: Latest)
+   * - `top`: Twitter's engagement-weighted ranking (API product: Top)
+   * - `likes`: client-side sort by like count descending
+   * - `retweets`: client-side sort by retweet count descending
+   */
+  sort?: 'recent' | 'top' | 'likes' | 'retweets';
 }
 
 /** Options for paged search methods */
@@ -80,7 +88,8 @@ export function withSearch<TBase extends AbstractConstructor<TwitterClientBase>>
       let cursor: string | undefined = options.cursor;
       let nextCursor: string | undefined;
       let pagesFetched = 0;
-      const { includeRaw = false, maxPages } = options;
+      const { includeRaw = false, maxPages, sort = 'recent' } = options;
+      const apiProduct = sort === 'top' ? 'Top' : 'Latest';
 
       const fetchPage = async (pageCount: number, pageCursor?: string) => {
         let lastError: string | undefined;
@@ -92,7 +101,7 @@ export function withSearch<TBase extends AbstractConstructor<TwitterClientBase>>
             rawQuery: query,
             count: pageCount,
             querySource: 'typed_query',
-            product: 'Latest',
+            product: apiProduct,
             ...(pageCursor ? { cursor: pageCursor } : {}),
           };
 
@@ -242,6 +251,12 @@ export function withSearch<TBase extends AbstractConstructor<TwitterClientBase>>
         }
         cursor = pageCursor;
         nextCursor = pageCursor;
+      }
+
+      if (sort === 'likes') {
+        tweets.sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0));
+      } else if (sort === 'retweets') {
+        tweets.sort((a, b) => (b.retweetCount ?? 0) - (a.retweetCount ?? 0));
       }
 
       return { success: true, tweets, nextCursor };

@@ -1,8 +1,72 @@
 import { Command } from 'commander';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CliContext } from '../src/cli/shared.js';
-import { registerSearchCommands } from '../src/commands/search.js';
+import { buildSearchQuery, registerSearchCommands } from '../src/commands/search.js';
 import { TwitterClient } from '../src/lib/twitter-client.js';
+
+const SINCE_TIME_RE = /^cats since_time:(\d+)$/;
+
+describe('buildSearchQuery', () => {
+  it('returns base query unchanged when no opts given', () => {
+    expect(buildSearchQuery('cats', {})).toBe('cats');
+  });
+
+  it('appends from: operator, stripping leading @', () => {
+    expect(buildSearchQuery('cats', { from: '@steipete' })).toBe('cats from:steipete');
+    expect(buildSearchQuery('cats', { from: 'steipete' })).toBe('cats from:steipete');
+  });
+
+  it('appends min_faves for --min-likes', () => {
+    expect(buildSearchQuery('cats', { minLikes: '50' })).toBe('cats min_faves:50');
+  });
+
+  it('appends min_faves:10 for --quality', () => {
+    expect(buildSearchQuery('cats', { quality: true })).toBe('cats min_faves:10');
+  });
+
+  it('--min-likes takes precedence over --quality', () => {
+    expect(buildSearchQuery('cats', { quality: true, minLikes: '100' })).toBe('cats min_faves:100');
+  });
+
+  it('appends -filter:replies for --no-replies', () => {
+    expect(buildSearchQuery('cats', { noReplies: true })).toBe('cats -filter:replies');
+  });
+
+  it('appends since_time for --since', () => {
+    const before = Math.floor((Date.now() - 60 * 60 * 1000) / 1000);
+    const result = buildSearchQuery('cats', { since: '1h' });
+    const after = Math.floor((Date.now() - 60 * 60 * 1000) / 1000);
+    const match = result.match(SINCE_TIME_RE);
+    expect(match).not.toBeNull();
+    const ts = Number(match?.[1]);
+    expect(ts).toBeGreaterThanOrEqual(before - 1);
+    expect(ts).toBeLessThanOrEqual(after + 1);
+  });
+
+  it('appends min_retweets for --min-retweets', () => {
+    expect(buildSearchQuery('cats', { minRetweets: '5' })).toBe('cats min_retweets:5');
+  });
+
+  it('appends min_replies for --min-replies', () => {
+    expect(buildSearchQuery('cats', { minReplies: '3' })).toBe('cats min_replies:3');
+  });
+
+  it('combines multiple operators', () => {
+    const result = buildSearchQuery('AI', {
+      from: 'sama',
+      noReplies: true,
+      minLikes: '20',
+      minRetweets: '5',
+      minReplies: '2',
+    });
+    expect(result).toContain('from:sama');
+    expect(result).toContain('min_faves:20');
+    expect(result).toContain('min_retweets:5');
+    expect(result).toContain('min_replies:2');
+    expect(result).toContain('-filter:replies');
+    expect(result.startsWith('AI ')).toBe(true);
+  });
+});
 
 describe('search command', () => {
   let program: Command;
