@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0 — 2026-03-02
+
+### Added
+- Add query-sugar flags to `search`: `--from`, `--since`, `--min-likes`, `--min-retweets`, `--min-replies`, `--no-replies`, `--quality`
+- Add `--sort` to `search` with `recent` (default), `top`, `likes`, and `retweets` options
+- Add `--pages N` shorthand for `--all --max-pages N` in `search`
+- Add `--limit N` to cap displayed results after fetch and sort in `search`
+- Add `--markdown` to print search results as a research document to stdout
+- Add `--save` to write search results to `~/clawd/drafts/` as a markdown file
+- Add dual-account credential routing for read-only commands (`secondaryCookieSource`, `secondaryChromeProfile`)
+
 ## 0.8.0 — 2026-01-19
 
 ### Added

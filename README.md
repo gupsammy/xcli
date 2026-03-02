@@ -85,6 +85,33 @@ xcli home -n 20
 
 Most list commands support `--all`, `--max-pages <n>`, `--cursor <string>`, and `--delay <ms>` for paginating through results. `--max-pages` requires `--all` or `--cursor`.
 
+### Search flags
+
+Query operator shortcuts for `xcli search "<query>"`:
+
+- `--from <username>` — restrict to tweets from this user (shorthand for `from:username`; leading `@` is stripped)
+- `--since <period>` — time window: `1h`, `3h`, `12h`, `1d`, `7d` (injects a precise `since_time:` Unix timestamp)
+- `--min-likes <n>` — minimum likes (`min_faves:N` operator)
+- `--min-retweets <n>` — minimum retweets
+- `--min-replies <n>` — minimum replies
+- `--no-replies` — exclude replies (`-filter:replies` operator)
+- `--quality` — shorthand for `min_faves:10`; ignored if `--min-likes` is set
+
+Result control:
+
+- `--sort <order>` — `recent` (default, chronological), `top` (Twitter's ranking), `likes`, `retweets` (client-side sort)
+- `--pages <n>` — fetch N pages (20 tweets/page); shorthand for `--all --max-pages N`
+- `--limit <n>` — cap results displayed after fetch and sort
+- `--markdown` — print results as a research document to stdout
+- `--save` — write results to `~/clawd/drafts/` as a markdown file (independent of `--markdown`)
+
+Example:
+
+```bash
+xcli search "AI" --from sama --since 7d --min-likes 100 --sort top --limit 10
+xcli search "open source" --no-replies --quality --pages 3 --save
+```
+
 ### Bookmarks flags
 
 The `bookmarks` command has additional flags for controlling thread context in the output:
@@ -156,7 +183,12 @@ Example `~/.config/xcli/config.json5`:
   timeoutMs: 20000,
 
   // Depth limit for quoted tweet expansion in JSON output
-  quoteDepth: 1
+  quoteDepth: 1,
+
+  // Secondary account for read-only commands (search, bookmarks, etc.)
+  // Useful to avoid rate-limiting your write account
+  secondaryCookieSource: "chrome",
+  secondaryChromeProfile: "Profile 2"
 }
 ```
 
