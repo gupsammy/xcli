@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1 — 2026-03-03
+
+### Added
+- `bookmarks` (and any paginated command) now prints `next-cursor: <value>` to stderr in text/human mode, making cursor-based automation scripts easy to write without needing `--json`.
+
 ## 0.9.0 — 2026-03-02
 
 ### Added

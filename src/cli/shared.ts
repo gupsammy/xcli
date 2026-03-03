@@ -498,6 +498,9 @@ export function createCliContext(
       return;
     }
     printTweets(tweets, { json: useJson, emptyMessage: opts.emptyMessage });
+    if (opts.usePagination && result.nextCursor) {
+      process.stderr.write(`next-cursor: ${result.nextCursor}\n`);
+    }
   }
 
   return {
