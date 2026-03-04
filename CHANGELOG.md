@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2 — 2026-03-04
+
+### Added
+- `bookmark-folders` command lists your bookmark folders with IDs, names, and URLs (requires X Premium). IDs can be used directly with `bookmarks --folder-id`. Adds `BookmarkFolder` and `BookmarkFoldersResult` types to the public API.
+
 ## 0.9.1 — 2026-03-03
 
 ### Added
