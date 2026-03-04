@@ -387,6 +387,14 @@ export interface ListsResult {
   error?: string;
 }
 
+export interface BookmarkFolder {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export type BookmarkFoldersResult = { success: true; folders: BookmarkFolder[] } | { success: false; error: string };
+
 export interface CreateTweetResponse {
   data?: {
     create_tweet?: {

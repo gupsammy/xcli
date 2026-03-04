@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { registerBookmarkFoldersCommand } from '../commands/bookmark-folders.js';
 import { registerBookmarksCommand } from '../commands/bookmarks.js';
 import { registerCheckCommand } from '../commands/check.js';
 import { registerFollowCommands } from '../commands/follow.js';
@@ -26,6 +27,7 @@ export const KNOWN_COMMANDS = new Set([
   'search',
   'mentions',
   'bookmarks',
+  'bookmark-folders',
   'unbookmark',
   'follow',
   'unfollow',
@@ -96,7 +98,7 @@ export function createProgram(ctx: CliContext): Command {
       ].join('\n\n')}\n\n${ctx.colors.section('Shortcuts')}\n${[
         formatExample('xcli <tweet-id-or-url> [--json]', 'Shorthand for `xcli read <tweet-id-or-url>`'),
       ].join('\n\n')}\n\n${ctx.colors.section('JSON Output')}\n${ctx.colors.muted(
-        `  Add ${ctx.colors.option('--json')} to: read, replies, thread, search, mentions, bookmarks, likes, following, followers, about, lists, list-timeline, user-tweets, query-ids`,
+        `  Add ${ctx.colors.option('--json')} to: read, replies, thread, search, mentions, bookmarks, bookmark-folders, likes, following, followers, about, lists, list-timeline, user-tweets, query-ids`,
       )}\n${ctx.colors.muted(
         `  Add ${ctx.colors.option('--json-full')} to include raw API response in ${ctx.colors.argument('_raw')} field (tweet commands only)`,
       )}\n${ctx.colors.muted(`  (Run ${ctx.colors.command('xcli <command> --help')} to see per-command flags.)`)}`,
@@ -146,6 +148,7 @@ export function createProgram(ctx: CliContext): Command {
   registerReadCommands(program, ctx);
   registerSearchCommands(program, ctx);
   registerBookmarksCommand(program, ctx);
+  registerBookmarkFoldersCommand(program, ctx);
   registerUnbookmarkCommand(program, ctx);
   registerFollowCommands(program, ctx);
   registerListsCommand(program, ctx);

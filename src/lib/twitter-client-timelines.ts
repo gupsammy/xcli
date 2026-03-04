@@ -1,8 +1,40 @@
 import type { AbstractConstructor, Mixin, TwitterClientBase } from './twitter-client-base.js';
-import { TWITTER_API_BASE } from './twitter-client-constants.js';
+import { FALLBACK_QUERY_IDS, TWITTER_API_BASE } from './twitter-client-constants.js';
 import { buildBookmarksFeatures, buildLikesFeatures } from './twitter-client-features.js';
-import type { GraphqlTweetResult, SearchResult, TweetData } from './twitter-client-types.js';
+import type {
+  BookmarkFolder,
+  BookmarkFoldersResult,
+  GraphqlTweetResult,
+  SearchResult,
+  TweetData,
+} from './twitter-client-types.js';
 import { extractCursorFromInstructions, parseTweetsFromInstructions } from './twitter-client-utils.js';
+
+// Internal raw type for the BookmarkFoldersSlice GraphQL response.
+// Each item has id/name directly (not wrapped in a collection object).
+interface GraphqlBookmarkCollectionItem {
+  id?: string;
+  name?: string;
+  description?: string | null;
+}
+
+function parseBookmarkFolders(items: GraphqlBookmarkCollectionItem[] | undefined): BookmarkFolder[] {
+  if (!items) {
+    return [];
+  }
+  const folders: BookmarkFolder[] = [];
+  for (const item of items) {
+    if (!item.id || !item.name) {
+      continue;
+    }
+    folders.push({
+      id: item.id,
+      name: item.name,
+      description: item.description ?? undefined,
+    });
+  }
+  return folders;
+}
 
 /** Options for timeline fetch methods */
 export interface TimelineFetchOptions {
@@ -24,6 +56,7 @@ export interface TwitterClientTimelineMethods {
   getAllLikes(options?: TimelinePaginationOptions): Promise<SearchResult>;
   getBookmarkFolderTimeline(folderId: string, count?: number, options?: TimelineFetchOptions): Promise<SearchResult>;
   getAllBookmarkFolderTimeline(folderId: string, options?: TimelinePaginationOptions): Promise<SearchResult>;
+  getBookmarkFolders(): Promise<BookmarkFoldersResult>;
 }
 
 export function withTimelines<TBase extends AbstractConstructor<TwitterClientBase>>(
@@ -54,6 +87,11 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
     private async getBookmarkFolderQueryIds(): Promise<string[]> {
       const primary = await this.getQueryId('BookmarkFolderTimeline');
       return Array.from(new Set([primary, 'KJIQpsvxrTfRIlbaRIySHQ']));
+    }
+
+    private async getBookmarkFoldersSliceQueryIds(): Promise<string[]> {
+      const primary = await this.getQueryId('BookmarkFoldersSlice');
+      return Array.from(new Set([primary, FALLBACK_QUERY_IDS.BookmarkFoldersSlice]));
     }
 
     private async getLikesQueryIds(): Promise<string[]> {
@@ -255,6 +293,84 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
 
     async getAllBookmarkFolderTimeline(folderId: string, options?: TimelinePaginationOptions): Promise<SearchResult> {
       return this.getBookmarkFolderTimelinePaged(folderId, Number.POSITIVE_INFINITY, options);
+    }
+
+    /**
+     * Get the authenticated user's bookmark folders (requires X Premium / bookmark collections).
+     */
+    async getBookmarkFolders(): Promise<BookmarkFoldersResult> {
+      type AttemptResult =
+        | { success: true; folders: BookmarkFolder[]; had404?: boolean }
+        | { success: false; error: string; had404?: boolean };
+
+      const tryOnce = async (): Promise<AttemptResult> => {
+        let had404 = false;
+        const queryIds = await this.getBookmarkFoldersSliceQueryIds();
+
+        for (const queryId of queryIds) {
+          const params = new URLSearchParams({ variables: '{}' });
+          const url = `${TWITTER_API_BASE}/${queryId}/BookmarkFoldersSlice?${params.toString()}`;
+
+          try {
+            const response = await this.fetchWithTimeout(url, {
+              method: 'GET',
+              headers: this.getHeaders(),
+            });
+
+            if (response.status === 404) {
+              had404 = true;
+              continue;
+            }
+
+            if (!response.ok) {
+              const text = await response.text();
+              return { success: false as const, error: `HTTP ${response.status}: ${text.slice(0, 200)}`, had404 };
+            }
+
+            const data = (await response.json()) as {
+              data?: {
+                viewer?: {
+                  user_results?: {
+                    result?: {
+                      bookmark_collections_slice?: {
+                        items?: GraphqlBookmarkCollectionItem[];
+                      };
+                    };
+                  };
+                };
+              };
+              errors?: Array<{ message: string; code?: number }>;
+            };
+
+            if (data.errors && data.errors.length > 0) {
+              const isPremiumRequired = data.errors.some((e) => e.code === 37);
+              if (isPremiumRequired) {
+                return {
+                  success: false as const,
+                  error:
+                    'Bookmark folders require X Premium. Your account does not have access to bookmark collections.',
+                  had404,
+                };
+              }
+              return { success: false as const, error: data.errors.map((e) => e.message).join(', '), had404 };
+            }
+
+            const items = data.data?.viewer?.user_results?.result?.bookmark_collections_slice?.items;
+            const folders = parseBookmarkFolders(items);
+            return { success: true as const, folders, had404 };
+          } catch (error) {
+            return { success: false as const, error: error instanceof Error ? error.message : String(error), had404 };
+          }
+        }
+
+        return { success: false as const, error: 'No valid response from BookmarkFoldersSlice', had404 };
+      };
+
+      const { result } = await this.withRefreshedQueryIdsOn404(tryOnce);
+      if (result.success) {
+        return { success: true, folders: result.folders };
+      }
+      return { success: false, error: result.error };
     }
 
     private async getBookmarksPaged(limit: number, options: TimelinePaginationOptions = {}): Promise<SearchResult> {

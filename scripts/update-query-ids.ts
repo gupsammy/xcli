@@ -21,6 +21,7 @@ const TARGET_OPERATIONS = [
   'SearchTimeline',
   'Bookmarks',
   'BookmarkFolderTimeline',
+  'BookmarkFoldersSlice',
   'Following',
   'Followers',
   'Likes',

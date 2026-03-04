@@ -32,6 +32,7 @@ export const FALLBACK_QUERY_IDS = {
   Followers: 'kuFUYP9eV1FPoEy4N-pi7w',
   Likes: 'JR2gceKucIKcVNB_9JkhsA',
   BookmarkFolderTimeline: 'KJIQpsvxrTfRIlbaRIySHQ',
+  BookmarkFoldersSlice: 'i78YDd0Tza-dV4SYs58kRg',
   ListOwnerships: 'wQcOSjSQ8NtgxIwvYl1lMg',
   ListMemberships: 'BlEXXdARdSeL_0KyKHHvvg',
   ListLatestTweetsTimeline: '2TemLyqrMpTeAmysdbnVqw',
