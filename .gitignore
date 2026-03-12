@@ -15,6 +15,7 @@ coverage/
 twitter-cli.bin
 bird
 xcli
+xcli-*
 .env
 .*.bun-build
 *.zip
