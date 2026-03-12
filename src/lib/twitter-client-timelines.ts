@@ -305,10 +305,11 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
 
       const tryOnce = async (): Promise<AttemptResult> => {
         let had404 = false;
+        let lastError: string | undefined;
         const queryIds = await this.getBookmarkFoldersSliceQueryIds();
 
         for (const queryId of queryIds) {
-          const params = new URLSearchParams({ variables: '{}' });
+          const params = new URLSearchParams({ variables: JSON.stringify({}) });
           const url = `${TWITTER_API_BASE}/${queryId}/BookmarkFoldersSlice?${params.toString()}`;
 
           try {
@@ -319,6 +320,7 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
 
             if (response.status === 404) {
               had404 = true;
+              lastError = `HTTP ${response.status}`;
               continue;
             }
 
@@ -359,11 +361,12 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
             const folders = parseBookmarkFolders(items);
             return { success: true as const, folders, had404 };
           } catch (error) {
-            return { success: false as const, error: error instanceof Error ? error.message : String(error), had404 };
+            lastError = error instanceof Error ? error.message : String(error);
+            continue;
           }
         }
 
-        return { success: false as const, error: 'No valid response from BookmarkFoldersSlice', had404 };
+        return { success: false as const, error: lastError ?? 'No valid response from BookmarkFoldersSlice', had404 };
       };
 
       const { result } = await this.withRefreshedQueryIdsOn404(tryOnce);
