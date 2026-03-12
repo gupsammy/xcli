@@ -21,3 +21,4 @@ xcli
 *.tar
 *.tar.gz
 *.tgz
+agents/

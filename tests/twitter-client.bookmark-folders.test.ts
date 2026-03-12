@@ -138,6 +138,51 @@ describe('TwitterClient getBookmarkFolders', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
+  it('returns error when all query IDs 404', async () => {
+    // Both the primary and fallback query IDs return 404
+    mockFetch
+      .mockResolvedValue({ ok: false, status: 404, text: async () => '' });
+
+    const client = new TwitterClient({ cookies: validCookies });
+    const result = await client.getBookmarkFolders();
+
+    expect(result.success).toBe(false);
+    if (result.success) {
+      return;
+    }
+    expect(result.error).toContain('BookmarkFoldersSlice');
+  });
+
+  it('returns error on HTTP 500', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => 'Internal Server Error',
+    });
+
+    const client = new TwitterClient({ cookies: validCookies });
+    const result = await client.getBookmarkFolders();
+
+    expect(result.success).toBe(false);
+    if (result.success) {
+      return;
+    }
+    expect(result.error).toContain('HTTP 500');
+  });
+
+  it('returns error on network failure', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('fetch failed'));
+
+    const client = new TwitterClient({ cookies: validCookies });
+    const result = await client.getBookmarkFolders();
+
+    expect(result.success).toBe(false);
+    if (result.success) {
+      return;
+    }
+    expect(result.error).toContain('fetch failed');
+  });
+
   it('skips items missing id or name', async () => {
     mockFetch.mockResolvedValueOnce(
       makeSuccessResponse([
