@@ -57,7 +57,7 @@ resolve_version() {
     return
   fi
 
-  info "Fetching latest release..."
+  info "Fetching latest release..." >&2
   API_URL="https://api.github.com/repos/${REPO}/releases/latest"
 
   if command -v curl >/dev/null 2>&1; then
