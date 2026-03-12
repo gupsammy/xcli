@@ -150,7 +150,7 @@ describe('TwitterClient getBookmarkFolders', () => {
     if (result.success) {
       return;
     }
-    expect(result.error).toContain('BookmarkFoldersSlice');
+    expect(result.error).toContain('HTTP 404');
   });
 
   it('returns error on HTTP 500', async () => {

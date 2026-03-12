@@ -320,6 +320,7 @@ export function withTimelines<TBase extends AbstractConstructor<TwitterClientBas
 
             if (response.status === 404) {
               had404 = true;
+              lastError = `HTTP ${response.status}`;
               continue;
             }
 
