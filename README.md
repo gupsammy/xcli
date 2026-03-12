@@ -26,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | sud
 Pin a specific version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | VERSION=0.9.2 sudo sh
+curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | sudo VERSION=0.9.2 sh
 ```
 
 ### Windows (PowerShell)

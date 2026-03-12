@@ -1,7 +1,7 @@
 #!/bin/sh
 # xcli installer — https://github.com/gupsammy/xcli
 # Usage: curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | sudo sh
-#        VERSION=0.9.2 curl -fsSL ... | sudo sh
+#        curl -fsSL ... | sudo VERSION=0.9.2 sh
 set -eu
 
 REPO="gupsammy/xcli"

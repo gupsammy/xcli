@@ -18,7 +18,7 @@ irm https://raw.githubusercontent.com/gupsammy/xcli/main/install.ps1 | iex
 
 **Pinning a version:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | VERSION=0.9.2 sudo sh
+curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | sudo VERSION=0.9.2 sh
 ```
 
 ## Key Decisions
