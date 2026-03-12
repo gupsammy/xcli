@@ -25,10 +25,13 @@ Target destinations:
    - `git tag v<version> && git push origin v<version>`
    - Create GitHub release from the tag. Include changelog notes and attach optional binary (see below).
 
-## Optional: attach compiled binary
-If you want a single-file binary for Homebrew/GitHub assets:
-- Build: `pnpm run binary` (uses Bun to produce `./xcli`).
-- Upload `xcli` to the GitHub release and use it for the Homebrew tarball.
+## Attach compiled binary
+Build and upload platform-specific binaries for the installer and Homebrew:
+- Build: `pnpm run build:binary` (uses Bun to produce `./xcli`).
+- Rename for the installer: `cp xcli xcli-darwin-arm64`
+- Upload both assets during the transition period (legacy + new naming):
+  `gh release create v<version> xcli-darwin-arm64 xcli --repo gupsammy/xcli`
+- After two releases with dual naming, stop uploading the legacy `xcli` asset.
 
 ## Homebrew tap update (steipete/homebrew-tap)
 1) Package the binary
@@ -50,8 +53,9 @@ If you want a single-file binary for Homebrew/GitHub assets:
 ## Release order suggestion
 1) Merge to `main` and tag.
 2) Publish npm.
-3) Build binary, upload to GitHub release.
+3) Build binary (`pnpm run build:binary`), rename (`cp xcli xcli-darwin-arm64`), upload both to GitHub release.
 4) Update Homebrew tap with new URL/SHA.
+5) Verify installer: `curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | sudo sh`
 
 ## Notes
 - npm name (`xcli`) requires `--access public` on first publish.

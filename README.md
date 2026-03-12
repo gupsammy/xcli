@@ -1,23 +1,44 @@
-# xcli — fast X/Twitter CLI
+<div align="center">
 
-`xcli` is a fast command-line interface for X/Twitter, forked and extended from [bird](https://github.com/steipete/bird) by [@steipete](https://github.com/steipete) (now private). It lets you post, read, bookmark, follow, search, and more — straight from your terminal using cookie auth extracted from your browser. No API key required.
+<h1>xcli</h1>
+
+<p>Fast X/Twitter CLI — post, read, bookmark, search, and more from your terminal.</p>
+
+<p>
+  <a href="https://github.com/gupsammy/xcli/releases/latest"><img src="https://img.shields.io/github/v/release/gupsammy/xcli?style=flat-square" alt="Latest Release"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/gupsammy/xcli?style=flat-square" alt="MIT License"></a>
+</p>
+
+</div>
+
+Forked and extended from [bird](https://github.com/steipete/bird) by [@steipete](https://github.com/steipete) (now private). Uses cookie auth extracted from your browser — no API key required.
 
 > **Note:** xcli uses X's internal, undocumented GraphQL API. It may break without notice. Use responsibly.
 
 ## Install
 
-### Prebuilt binary (macOS)
+### Quick install (macOS / Linux)
 
 ```bash
-curl -fsSL https://github.com/gupsammy/xcli/releases/latest/download/xcli -o xcli
-chmod +x xcli
-sudo mv xcli /usr/local/bin/xcli
+curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | sudo sh
 ```
 
-Verify the installation:
+Pin a specific version:
 
 ```bash
-xcli --version
+curl -fsSL https://raw.githubusercontent.com/gupsammy/xcli/main/install.sh | VERSION=0.9.2 sudo sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/gupsammy/xcli/main/install.ps1 | iex
+```
+
+### Uninstall
+
+```bash
+sudo rm /usr/local/bin/xcli
 ```
 
 ### Build from source
