@@ -149,3 +149,5 @@ info "    ${BINARY_NAME} timeline        View your timeline"
 info ""
 info "  Docs: https://github.com/${REPO}"
 info ""
+
+exit 0
