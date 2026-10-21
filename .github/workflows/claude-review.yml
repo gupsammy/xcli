@@ -99,4 +99,6 @@ jobs:
             Be precise and constructive. Cite specific lines. Do not nitpick
             formatting if a formatter/linter is configured in the project.
           claude_args: |
+            --model opus
+            --effort high
             --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment"
